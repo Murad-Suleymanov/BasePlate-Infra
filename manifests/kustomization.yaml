@@ -8,10 +8,13 @@ resources:
   - gateway/reference-grants.yaml
   - gateway/grafana-route.yaml
   - gateway/registry-route.yaml
+  - gateway/registry-ui-route.yaml
   - gateway/argocd-route.yaml
   - registry/namespace.yaml
   - registry/deployment.yaml
   - registry/service.yaml
+  - registry/registry-ui-deployment.yaml
+  - registry/registry-ui-service.yaml
   - operator/webhook-service.yaml
   - operator/webhook-route.yaml
   - monitoring/birservice-dashboard.yaml
