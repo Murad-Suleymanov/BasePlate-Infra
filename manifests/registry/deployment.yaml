@@ -26,6 +26,14 @@ spec:
           env:
             - name: REGISTRY_STORAGE_DELETE_ENABLED
               value: "true"
+            - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Origin
+              value: '["*"]'
+            - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods
+              value: '["HEAD","GET","OPTIONS","DELETE"]'
+            - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers
+              value: '["Authorization"]'
+            - name: REGISTRY_HTTP_HEADERS_Access-Control-Expose-Headers
+              value: '["Docker-Content-Digest"]'
       volumes:
         - name: registry-data
           hostPath:

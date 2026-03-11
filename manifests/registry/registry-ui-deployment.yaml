@@ -21,11 +21,9 @@ spec:
           ports:
             - containerPort: 80
           env:
-            # Brauzer eyni origin (HTTPS) istifadə edir; nginx internal registry-ə proxy edir
+            # Birbaşa registry URL - CORS registry-də aktivdir
             - name: REGISTRY_URL
-              value: "https://registry-ui.easysolution.work"
-            - name: NGINX_PROXY_PASS_URL
-              value: "http://registry.registry.svc.cluster.local:5000"
+              value: "https://registry.easysolution.work"
             - name: PULL_URL
               value: "https://registry.easysolution.work"
             - name: SINGLE_REGISTRY
