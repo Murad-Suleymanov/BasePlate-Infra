@@ -34,6 +34,9 @@ spec:
         prometheus:
           enabled: true
           prometheusSpec:
+            serviceMonitorSelectorNilUsesHelmValues: false
+            podMonitorSelectorNilUsesHelmValues: false
+            ruleSelectorNilUsesHelmValues: false
             retention: 7d
             storageSpec:
               volumeClaimTemplate:
