@@ -30,3 +30,9 @@ spec:
               value: "true"
             - name: REGISTRY_TITLE
               value: "Easy Deploy Registry"
+            # Registry auth: admin / EasyDeploy2026 (Basic base64)
+            - name: NGINX_PROXY_HEADER_Authorization
+              valueFrom:
+                secretKeyRef:
+                  name: registry-ui-auth
+                  key: basic-auth

@@ -11,6 +11,8 @@ resources:
   - gateway/registry-ui-route.yaml
   - gateway/argocd-route.yaml
   - registry/namespace.yaml
+  - registry/registry-auth-secret.yaml
+  - registry/registry-ui-auth-secret.yaml
   - registry/deployment.yaml
   - registry/service.yaml
   - registry/registry-ui-deployment.yaml
