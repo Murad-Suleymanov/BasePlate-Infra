@@ -8,6 +8,7 @@ resources:
   - gateway/reference-grants.yaml
   - gateway/grafana-route.yaml
   - gateway/registry-route.yaml
+  - gateway/argocd-route.yaml
   - registry/namespace.yaml
   - registry/deployment.yaml
   - registry/service.yaml
