@@ -17,4 +17,5 @@ resources:
   - registry/registry-ui-service.yaml
   - operator/webhook-service.yaml
   - operator/webhook-route.yaml
+  - argocd/server-insecure.yaml
   - monitoring/birservice-dashboard.yaml
