@@ -8,7 +8,7 @@ Bu repo bütün ArgoCD Application/ApplicationSet resurslarını və klaster inf
 |------|--------|
 | **BasePlate** | Go operator, CRD, Helm chart, operator manifests |
 | **BasePlate-Infra** | ArgoCD apps, gateway/registry/webhook manifests, install scripts |
-| **BasePlate-Dev** | Developer YAML faylları (`tenants/*/simple-yaml/*.yaml`) |
+| **BasePlate-Dev** | Developer YAML faylları (`*/*.yaml (service_name/namespace_name.yaml)`) |
 
 ### ArgoCD Applications
 

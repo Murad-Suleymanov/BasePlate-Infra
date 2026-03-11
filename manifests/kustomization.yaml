@@ -12,3 +12,4 @@ resources:
   - registry/service.yaml
   - operator/webhook-service.yaml
   - operator/webhook-route.yaml
+  - monitoring/birservice-dashboard.yaml

@@ -32,7 +32,7 @@ BasePlate-Infra/
 |------|---------|
 | [BasePlate](https://github.com/Murad-Suleymanov/BasePlate) | Go operator, CRD, Helm chart, operator deployment manifests |
 | **BasePlate-Infra** (this) | ArgoCD apps, infra manifests, install scripts |
-| [BasePlate-Dev](https://github.com/Murad-Suleymanov/BasePlate-Dev) | Developer YAML files (`tenants/*/simple-yaml/*.yaml`) |
+| [BasePlate-Dev](https://github.com/Murad-Suleymanov/BasePlate-Dev) | Developer YAML files (`*/*.yaml (service_name/namespace_name.yaml)`) |
 
 ## Quick Start
 
