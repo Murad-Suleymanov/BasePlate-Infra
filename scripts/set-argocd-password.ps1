@@ -4,17 +4,34 @@
 
 param([string]$Password = "EasyDeploy2026")
 
-$Hash = $null
-if (Get-Command argocd -ErrorAction SilentlyContinue) {
-    $Hash = argocd account bcrypt --password $Password
-} elseif (Get-Command docker -ErrorAction SilentlyContinue) {
-    $Hash = docker run --rm argoproj/argocd:latest argocd account bcrypt --password $Password
+# Pre-generated bcrypt hash for EasyDeploy2026 (zero deps when using default)
+$HashEasyDeploy = '$2b$12$.ozrfe.uj.j29CDBY/lw/eMoFsA40jLYbX/FoJDEBG4IgNZh2gomW'
+
+function Get-BcryptHash {
+    param([string]$Pwd)
+    if (Get-Command argocd -ErrorAction SilentlyContinue) {
+        return argocd account bcrypt --password $Pwd
+    }
+    if (Get-Command docker -ErrorAction SilentlyContinue) {
+        return docker run --rm argoproj/argocd:latest argocd account bcrypt --password $Pwd
+    }
+    if (Get-Command python -ErrorAction SilentlyContinue) {
+        return python -c "import bcrypt,sys; print(bcrypt.hashpw(sys.argv[1].encode(), bcrypt.gensalt()).decode())" $Pwd 2>$null
+    }
+    if (Get-Command python3 -ErrorAction SilentlyContinue) {
+        return python3 -c "import bcrypt,sys; print(bcrypt.hashpw(sys.argv[1].encode(), bcrypt.gensalt()).decode())" $Pwd 2>$null
+    }
+    return $null
 }
 
-if (-not $Hash) {
-    Write-Host "argocd CLI or docker required. Run manually:"
-    Write-Host "  argocd account bcrypt --password `"$Password`""
-    Write-Host "Then patch: kubectl -n argocd patch secret argocd-secret --type merge -p '{...}'"
+$Hash = if ($Password -eq "EasyDeploy2026") { $HashEasyDeploy } else { Get-BcryptHash $Password }
+if (-not $Hash -and $Password -ne "EasyDeploy2026") {
+    # Try pip install bcrypt and retry
+    pip install bcrypt -q 2>$null; pip3 install bcrypt -q 2>$null
+    $Hash = Get-BcryptHash $Password
+}
+if (-not $Hash -or $Hash.Length -lt 50) {
+    Write-Host "Bcrypt generate edilə bilmədi. argocd, docker və ya python lazımdır."
     exit 1
 }
 
