@@ -18,4 +18,13 @@ fi
 
 MTime=$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u +%Y-%m-%dT%H:%M:%S)
 kubectl -n argocd patch secret argocd-secret --type merge -p "{\"stringData\":{\"admin.password\":\"$HASH\",\"admin.passwordMtime\":\"$MTime\"}}"
-echo "Password: $PASSWORD"
+
+# ArgoCD uses argocd-initial-admin-secret if it exists - our custom password is ignored!
+# Delete it so ArgoCD falls back to admin.password in argocd-secret.
+kubectl -n argocd delete secret argocd-initial-admin-secret --ignore-not-found=true
+
+# Restart server to pick up changes
+kubectl -n argocd rollout restart deployment argocd-server
+
+echo "Password updated: $PASSWORD"
+echo "Wait ~30s for argocd-server rollout, then login at https://argocd.easysolution.work"
