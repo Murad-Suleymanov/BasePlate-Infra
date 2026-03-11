@@ -46,3 +46,17 @@ kubectl apply -f argocd/ -n argocd
 ```
 
 ArgoCD will automatically sync and deploy all platform components.
+
+## ArgoCD Static Password
+
+Default password: `EasyDeploy2026!` (Grafana ilə eyni)
+
+```bash
+# PowerShell
+.\scripts\set-argocd-password.ps1
+
+# Bash
+./scripts/set-argocd-password.sh
+```
+
+Manual: [bcrypt generator](https://bcrypt-generator.com/) → `EasyDeploy2026!` → hash al → `kubectl -n argocd patch secret argocd-secret --type merge -p '{"stringData":{"admin.password":"HASH","admin.passwordMtime":"'$(date +%FT%T%Z)'"}}'`
