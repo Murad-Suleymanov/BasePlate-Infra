@@ -49,7 +49,7 @@ ArgoCD will automatically sync and deploy all platform components.
 
 ## ArgoCD Static Password
 
-Default password: `EasyDeploy2026!` (Grafana ilə eyni)
+Default password: `EasyDeploy2026`
 
 ```bash
 # PowerShell
@@ -59,4 +59,8 @@ Default password: `EasyDeploy2026!` (Grafana ilə eyni)
 ./scripts/set-argocd-password.sh
 ```
 
-Manual: [bcrypt generator](https://bcrypt-generator.com/) → `EasyDeploy2026!` → hash al → `kubectl -n argocd patch secret argocd-secret --type merge -p '{"stringData":{"admin.password":"HASH","admin.passwordMtime":"'$(date +%FT%T%Z)'"}}'`
+Manual: [bcrypt-generator.com](https://bcrypt-generator.com/) → `EasyDeploy2026` yaz → hash copy et → aşağıdakı əmrdə BURAYA əvəz et:
+
+```bash
+kubectl -n argocd patch secret argocd-secret --type merge -p '{"stringData":{"admin.password":"BURAYA_HASH","admin.passwordMtime":"2025-03-11T00:00:00Z"}}'
+```

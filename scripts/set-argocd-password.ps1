@@ -1,8 +1,8 @@
-# ArgoCD static admin password: EasyDeploy2026!
+# ArgoCD static admin password: EasyDeploy2026
 # Usage: .\set-argocd-password.ps1
 #        .\set-argocd-password.ps1 "CustomPassword"
 
-param([string]$Password = "EasyDeploy2026!")
+param([string]$Password = "EasyDeploy2026")
 
 $Hash = $null
 if (Get-Command argocd -ErrorAction SilentlyContinue) {
