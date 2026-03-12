@@ -16,7 +16,7 @@ spec:
           - path: "*/*.yaml"
   template:
     metadata:
-      name: '{{ printf "%s-%s" (trimSuffix ".yaml" .path.filename) .path.path }}'
+      name: '{{ printf "%s-%s" .path.path (trimSuffix ".yaml" .path.filename) }}'
     spec:
       project: default
       sources:
