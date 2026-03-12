@@ -29,12 +29,15 @@ spec:
           env:
             - name: REGISTRY_STORAGE_DELETE_ENABLED
               value: "true"
+            # CORS: credentials ilə * işləmir — konkret origin lazımdır (registry-ui)
             - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Origin
-              value: '["*"]'
+              value: '["https://registry-ui.easysolution.work"]'
+            - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Credentials
+              value: '["true"]'
             - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods
-              value: '["HEAD","GET","OPTIONS","DELETE"]'
+              value: '["HEAD","GET","OPTIONS","DELETE","POST","PUT"]'
             - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers
-              value: '["Authorization"]'
+              value: '["Authorization","Accept","Cache-Control","Content-Type"]'
             - name: REGISTRY_HTTP_HEADERS_Access-Control-Expose-Headers
               value: '["Docker-Content-Digest"]'
             - name: REGISTRY_AUTH
