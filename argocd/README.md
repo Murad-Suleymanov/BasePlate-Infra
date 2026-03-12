@@ -20,7 +20,7 @@ Bu repo bütün ArgoCD Application/ApplicationSet resurslarını və klaster inf
 | `application-cert-manager.yaml` | cert-manager (Helm) |
 | `application-monitoring.yaml` | kube-prometheus-stack (Helm) |
 | `application-external-dns.yaml` | ExternalDNS (Helm) |
-| `applicationset-birservices.yaml` | Developer servislər (BasePlate-Dev → BasePlate chart) |
+| `manifests/argocd/applicationset-birservices.yaml` | Developer servislər (BasePlate-Dev, service/ns.yaml → chart) |
 
 ### İlk Quraşdırma
 

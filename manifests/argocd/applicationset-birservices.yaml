@@ -1,7 +1,10 @@
+# service_name/namespace_name.yaml — service_name altında bir neçə namespace (fayl) ola bilər
+# Məs: hello-csharp/loadtest.yaml, hello-csharp/prod.yaml, api/dev.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: easy-deploy-birservices
+  namespace: argocd
 spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
@@ -10,12 +13,9 @@ spec:
         repoURL: https://github.com/Murad-Suleymanov/BasePlate-Dev
         revision: HEAD
         files:
-          # Pattern: service_name/namespace_name.yaml (e.g. service1/prod.yaml, api/dev.yaml)
           - path: "*/*.yaml"
   template:
     metadata:
-      # App name: namespace-service (e.g. prod-service1, dev-api)
-      # path.path=service_name (folder), path.filename=namespace_name.yaml
       name: '{{ printf "%s-%s" (trimSuffix ".yaml" .path.filename) .path.path }}'
     spec:
       project: default
@@ -24,17 +24,14 @@ spec:
           targetRevision: HEAD
           path: charts/birservice
           helm:
-            # BirService name = folder (service_name)
             releaseName: '{{ .path.path }}'
             valueFiles:
               - '$values/{{ .path.path }}/{{ .path.filename }}'
-
         - repoURL: https://github.com/Murad-Suleymanov/BasePlate-Dev
           targetRevision: HEAD
           ref: values
       destination:
         server: https://kubernetes.default.svc
-        # Namespace = filename without .yaml (namespace_name)
         namespace: '{{ trimSuffix ".yaml" .path.filename }}'
       syncPolicy:
         automated:

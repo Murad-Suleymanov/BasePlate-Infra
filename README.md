@@ -13,9 +13,9 @@ BasePlate-Infra/
 │   ├── application-cert-manager.yaml# cert-manager (Helm)
 │   ├── application-monitoring.yaml  # kube-prometheus-stack (Helm)
 │   ├── application-external-dns.yaml# ExternalDNS (Helm)
-│   ├── applicationset-birservices.yaml # Developer services (→ BasePlate-Dev)
 │   └── README.md
 ├── manifests/                       # Kustomize manifests deployed by application-infra
+│   ├── argocd/                      # ApplicationSet (service_name/namespace_name.yaml)
 │   ├── gateway/                     # Gateway, TLS, ClusterIssuers, routes
 │   ├── registry/                    # In-cluster container registry
 │   ├── operator/                    # Webhook Service + HTTPRoute
