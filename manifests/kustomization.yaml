@@ -22,3 +22,4 @@ resources:
   - argocd/applicationset-birservices.yaml
   - argocd/server-insecure.yaml
   - monitoring/birservice-dashboard.yaml
+  - monitoring/calico-servicemonitor.yaml

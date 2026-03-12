@@ -52,9 +52,16 @@ ArgoCD will automatically sync and deploy all platform components.
 
 ## Pipeline Injection (GitHub repo → build → deploy)
 
-`repo:` ilə BirService yaradanda operator avtomatik workflow + GitHub-da REGISTRY_USERNAME/PASSWORD secret yaradır.
+Developer BasePlate-Dev-da `repo: https://github.com/user/repo` əlavə edəndə operator avtomatik:
+- **Pipeline** — `.github/workflows/build-push.yaml` repo-ya yazır
+- **Secrets** — `REGISTRY_USERNAME`, `REGISTRY_PASSWORD` GitHub Actions-a əlavə edir
 
-**GITHUB_TOKEN** — `github-pipeline-secret` (easy-deploy-system) və ya ArgoCD repo credential. Bir dəfə konfiqurasiya olunub.
+**Prerequisite:** `github-pipeline-secret` (GITHUB_TOKEN) — [docs/pipeline-injection.md](docs/pipeline-injection.md)
+
+```bash
+GITHUB_TOKEN=ghp_xxx ./scripts/bootstrap-pipeline-secret.sh
+kubectl -n easy-deploy-system rollout restart deployment easy-deploy-operator
+```
 
 ## ArgoCD Static Password
 
