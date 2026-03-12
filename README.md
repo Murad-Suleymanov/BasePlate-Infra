@@ -20,6 +20,9 @@ BasePlate-Infra/
 │   ├── registry/                    # In-cluster container registry
 │   ├── operator/                    # Webhook Service + HTTPRoute
 │   └── kustomization.yaml
+├── scripts/
+│   ├── bootstrap-pipeline-secret.sh # Yeni cluster: github-pipeline-secret (one-time)
+│   └── set-argocd-password.sh
 ├── install-gateway-api-crds.sh      # One-time: install Gateway API CRDs
 ├── install-kube-prometheus-crds.sh  # One-time: install Prometheus Operator CRDs
 ├── verify-kube-prometheus-stack.sh  # Verify monitoring stack health
@@ -46,6 +49,12 @@ kubectl apply -f argocd/ -n argocd
 ```
 
 ArgoCD will automatically sync and deploy all platform components.
+
+## Pipeline Injection (GitHub repo → build → deploy)
+
+`repo:` ilə BirService yaradanda operator avtomatik workflow + GitHub-da REGISTRY_USERNAME/PASSWORD secret yaradır.
+
+**GITHUB_TOKEN** — `github-pipeline-secret` (easy-deploy-system) və ya ArgoCD repo credential. Bir dəfə konfiqurasiya olunub.
 
 ## ArgoCD Static Password
 
