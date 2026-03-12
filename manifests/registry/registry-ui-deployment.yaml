@@ -21,15 +21,19 @@ spec:
           ports:
             - containerPort: 80
           env:
-            # Birbaşa registry URL - CORS registry-də aktivdir
+            # Proxy mode: brauzer yalnız UI-a sorğu edir, UI registry-yə proxy edir — CORS lazım deyil
+            - name: NGINX_PROXY_PASS_URL
+              value: "http://registry.registry.svc.cluster.local:5000"
             - name: REGISTRY_URL
-              value: "https://registry.easysolution.work"
+              value: "https://registry-ui.easysolution.work"
             - name: PULL_URL
               value: "https://registry.easysolution.work"
             - name: SINGLE_REGISTRY
               value: "true"
             - name: REGISTRY_TITLE
               value: "Easy Deploy Registry"
+            - name: REGISTRY_SECURED
+              value: "true"
             # Registry auth: admin / EasyDeploy2026 (Basic base64)
             - name: NGINX_PROXY_HEADER_Authorization
               valueFrom:
