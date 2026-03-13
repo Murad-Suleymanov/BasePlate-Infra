@@ -24,3 +24,4 @@ resources:
   - argocd/server-insecure.yaml
   - monitoring/birservice-dashboard.yaml
   - monitoring/calico-servicemonitor.yaml
+  - monitoring/operator-servicemonitor.yaml
