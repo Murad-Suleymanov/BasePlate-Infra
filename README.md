@@ -13,6 +13,7 @@ BasePlate-Infra/
 │   ├── application-cert-manager.yaml# cert-manager (Helm)
 │   ├── application-monitoring.yaml  # kube-prometheus-stack (Helm)
 │   ├── application-external-dns.yaml# ExternalDNS (Helm)
+│   ├── application-metrics-server.yaml # metrics-server (HPA, kubectl top)
 │   └── README.md
 ├── manifests/                       # Kustomize manifests deployed by application-infra
 │   ├── argocd/                      # ApplicationSet (service_name/namespace_name.yaml)
