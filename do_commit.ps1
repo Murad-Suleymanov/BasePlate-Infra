@@ -1,3 +1,3 @@
 git add -A
-git commit -m "refactor: split monolithic infra app into per-component ArgoCD Applications"
+git commit -m "refactor: rename apps to match ArgoCD names, move operator to Easy-Deploy"
 git push
