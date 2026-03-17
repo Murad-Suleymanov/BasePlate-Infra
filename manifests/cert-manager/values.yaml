@@ -1,0 +1,7 @@
+# cert-manager — TLS komandası bu faylı idarə edir
+crds:
+  enabled: true
+prometheus:
+  enabled: true
+  servicemonitor:
+    enabled: true

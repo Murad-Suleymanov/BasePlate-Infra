@@ -1,14 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: argocd-config
+  name: gateway
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
     targetRevision: HEAD
-    path: manifests/argocd
+    path: manifests/gateway
+    directory:
+      exclude: '*-application.yaml'
   destination:
     server: https://kubernetes.default.svc
   syncPolicy:

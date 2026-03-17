@@ -1,26 +1,26 @@
-## ArgoCD Applications — BasePlate-Infra
+## ArgoCD — BasePlate-Infra
 
-Bu repo bütün ArgoCD Application/ApplicationSet resurslarını və klaster infra manifestlərini saxlayır.
+**argocd/** yalnız ArgoCD-ə aid məsələləri saxlayır. Bütün Application tərifləri domain qovluqlarında: `manifests/gateway/`, `manifests/monitoring/` və s.
 
-### Repo Strukturu
+### argocd/ məzmunu
 
-| Repo | Məzmun |
+| Fayl | Məqsəd |
 |------|--------|
-| **BasePlate** | Go operator, CRD, Helm chart, operator manifests |
-| **BasePlate-Infra** | ArgoCD apps, gateway/registry/webhook manifests, install scripts |
-| **BasePlate-Dev** | Developer YAML faylları (`*/*.yaml (service_name/namespace_name.yaml)`) |
+| `application-root.yaml` | root-infra — manifests/ + argocd/ (özünü izləyir) |
+| `README.md` | Bu fayl |
 
-### ArgoCD Applications
+### Application tərifləri (manifests/ altında)
 
-| Fayl | Nə deploy edir |
-|------|----------------|
-| `application-platform.yaml` | CRD + Operator (BasePlate repo → `manifests/`) |
-| `application-infra.yaml` | Gateway, Registry, Webhook manifests (BasePlate-Infra → `manifests/`) |
-| `application-gateway.yaml` | NGINX Gateway Fabric (Helm) |
-| `application-cert-manager.yaml` | cert-manager (Helm) |
-| `application-monitoring.yaml` | kube-prometheus-stack (Helm) |
-| `application-external-dns.yaml` | ExternalDNS (Helm) |
-| `manifests/argocd/applicationset-birservices.yaml` | Developer servislər (BasePlate-Dev, service/ns.yaml → chart) |
+| Qovluq | Application faylları |
+|--------|----------------------|
+| `manifests/gateway/` | gateway-application.yaml, nginx-gateway-fabric-application.yaml |
+| `manifests/monitoring/` | monitoring-application.yaml, kube-prometheus-stack-application.yaml, metrics-server-application.yaml |
+| `manifests/cert-manager/` | cert-manager-application.yaml |
+| `manifests/dns/` | external-dns-application.yaml |
+| `manifests/registry/` | registry-application.yaml |
+| `manifests/argocd/` | argocd-config-application.yaml |
+
+Platform **BasePlate** repo-da öz root-una malikdir: `BasePlate/argocd/`
 
 ### İlk Quraşdırma
 
@@ -29,6 +29,13 @@ Bu repo bütün ArgoCD Application/ApplicationSet resurslarını və klaster inf
 bash install-gateway-api-crds.sh
 bash install-kube-prometheus-crds.sh
 
-# 2. Bütün ArgoCD application-ları apply et
-kubectl apply -f argocd/ -n argocd
+# 2. Infra root apply et
+kubectl apply -f argocd/application-root.yaml
+
+# 3. Platform root apply et (BasePlate repo-dan)
+cd ../BasePlate
+kubectl apply -f argocd/application-root.yaml
 ```
+
+**root-infra** (BasePlate-Infra) — gateway, monitoring, cert-manager, dns, registry, argocd-config  
+**root-platform** (BasePlate) — easy-deploy-platform

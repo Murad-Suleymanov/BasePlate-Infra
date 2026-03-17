@@ -6,21 +6,16 @@ Infrastructure manifests and ArgoCD application definitions for the **Easy-Deplo
 
 ```
 BasePlate-Infra/
-├── argocd/                          # ArgoCD Application / ApplicationSet
-│   ├── application-platform.yaml    # CRD + Operator  (→ BasePlate repo)
-│   ├── application-infra.yaml       # Gateway, Registry, Webhook (→ this repo)
-│   ├── application-gateway.yaml     # NGINX Gateway Fabric (Helm)
-│   ├── application-cert-manager.yaml# cert-manager (Helm)
-│   ├── application-monitoring.yaml  # kube-prometheus-stack (Helm)
-│   ├── application-external-dns.yaml# ExternalDNS (Helm)
-│   ├── application-metrics-server.yaml # metrics-server (HPA, kubectl top)
+├── argocd/                          # Başlanğıc (bootstrap)
+│   ├── application-root.yaml        # root-infra
 │   └── README.md
-├── manifests/                       # Kustomize manifests deployed by application-infra
-│   ├── argocd/                      # ApplicationSet (service_name/namespace_name.yaml)
-│   ├── gateway/                     # Gateway, TLS, ClusterIssuers, routes
-│   ├── registry/                    # In-cluster container registry
-│   ├── operator/                    # Webhook Service + HTTPRoute
-│   └── kustomization.yaml
+├── manifests/                       # Bütün Application tərifləri və values
+│   ├── argocd/                      # ArgoCD konfiqi (ApplicationSet, route)
+│   ├── gateway/                     # Gateway + Application tərifləri
+│   ├── monitoring/                  # Monitoring + Application tərifləri
+│   ├── cert-manager/                # cert-manager + Application
+│   ├── dns/                         # external-dns + Application
+│   └── registry/                    # Registry + Application
 ├── scripts/
 │   ├── bootstrap-pipeline-secret.sh # Yeni cluster: github-pipeline-secret (one-time)
 │   └── set-argocd-password.sh
@@ -34,8 +29,8 @@ BasePlate-Infra/
 
 | Repo | Purpose |
 |------|---------|
-| [BasePlate](https://github.com/Murad-Suleymanov/BasePlate) | Go operator, CRD, Helm chart, operator deployment manifests |
-| **BasePlate-Infra** (this) | ArgoCD apps, infra manifests, install scripts |
+| [BasePlate](https://github.com/Murad-Suleymanov/BasePlate) | Go operator, CRD, Helm chart, operator manifests, **platform Application** (`argocd/`) |
+| **BasePlate-Infra** (this) | Infra ArgoCD apps (gateway, monitoring, dns, …), install scripts |
 | [BasePlate-Dev](https://github.com/Murad-Suleymanov/BasePlate-Dev) | Developer YAML files (`*/*.yaml (service_name/namespace_name.yaml)`) |
 
 ## Quick Start
@@ -45,8 +40,9 @@ BasePlate-Infra/
 bash install-gateway-api-crds.sh
 bash install-kube-prometheus-crds.sh
 
-# 2. Apply all ArgoCD applications
-kubectl apply -f argocd/ -n argocd
+# 2. Apply roots (hər iki repo — bir dəfəlik)
+kubectl apply -f argocd/application-root.yaml                  # infra
+# BasePlate: kubectl apply -f argocd/application-root.yaml     # platform
 ```
 
 ArgoCD will automatically sync and deploy all platform components.
