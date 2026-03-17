@@ -5,13 +5,21 @@ metadata:
   namespace: argocd
 spec:
   project: default
-  source:
-    repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
-    targetRevision: HEAD
-    path: manifests/monitoring
-    directory:
-      recurse: true
-      exclude: '{*-application.yaml,*-values.yaml}'
+  sources:
+    # Child apps: kube-prometheus-stack, metrics-server
+    - repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
+      targetRevision: HEAD
+      path: manifests/monitoring/apps
+      directory:
+        recurse: true
+        include: '*-application.yaml'
+    # Monitoring config resources: dashboards, routes, ServiceMonitor/PodMonitor
+    - repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
+      targetRevision: HEAD
+      path: manifests/monitoring
+      directory:
+        recurse: true
+        exclude: '{apps/*,*-application.yaml,*-values.yaml}'
   destination:
     server: https://kubernetes.default.svc
   syncPolicy:
