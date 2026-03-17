@@ -10,7 +10,8 @@ spec:
     targetRevision: HEAD
     path: manifests/monitoring
     directory:
-      exclude: '*-application.yaml'
+      recurse: true
+      exclude: '{*-application.yaml,*-values.yaml}'
   destination:
     server: https://kubernetes.default.svc
   syncPolicy:
