@@ -1,16 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: argocd-config
+  name: registry
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
     targetRevision: HEAD
-    path: manifests/argocd
+    path: manifests/registry/resources
     directory:
-      exclude: '{*-application.yaml,*-values.yaml}'
+      recurse: true
   destination:
     server: https://kubernetes.default.svc
   syncPolicy:

@@ -14,7 +14,6 @@ spec:
       directory:
         recurse: true
         include: '*-application.yaml'
-        exclude: 'monitoring/apps/*-application.yaml'
     # Özü: argocd/application-root.yaml
     - repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
       targetRevision: HEAD

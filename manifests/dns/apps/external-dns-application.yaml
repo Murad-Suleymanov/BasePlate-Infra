@@ -12,7 +12,7 @@ spec:
       helm:
         releaseName: external-dns
         valueFiles:
-          - $values/manifests/dns/external-dns-values.yaml
+          - $values/manifests/dns/values/external-dns-values.yaml
     - repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
       ref: values
       targetRevision: HEAD

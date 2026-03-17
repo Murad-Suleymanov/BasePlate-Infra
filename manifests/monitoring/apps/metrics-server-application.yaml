@@ -13,7 +13,7 @@ spec:
       helm:
         releaseName: metrics-server
         valueFiles:
-          - $values/manifests/monitoring/metrics-server-values.yaml
+          - $values/manifests/monitoring/values/metrics-server-values.yaml
     - repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
       ref: values
       targetRevision: HEAD
