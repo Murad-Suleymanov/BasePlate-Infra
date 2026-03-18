@@ -1,0 +1,47 @@
+crds:
+  enabled: false
+
+kubeControllerManager:
+  enabled: true
+kubeScheduler:
+  enabled: true
+kubeEtcd:
+  enabled: true
+
+grafana:
+  enabled: true
+  adminPassword: EasyDeployDev2026!
+  persistence:
+    enabled: true
+    storageClassName: local-path
+    size: 1Gi
+
+prometheus:
+  enabled: true
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    serviceMonitorNamespaceSelector: {}
+    podMonitorNamespaceSelector: {}
+    retention: 3d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi

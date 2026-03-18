@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: registry-prod
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
+    targetRevision: HEAD
+    path: manifests/registry/resources/prod
+    directory:
+      recurse: true
+  destination:
+    name: prod-cluster
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

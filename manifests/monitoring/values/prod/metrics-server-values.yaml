@@ -1,0 +1,3 @@
+args:
+  - --kubelet-preferred-address-types=InternalIP
+  - --kubelet-use-node-status-port

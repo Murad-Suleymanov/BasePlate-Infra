@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: easy-deploy-birservices-prod
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/Murad-Suleymanov/BasePlate-Dev
+        revision: HEAD
+        files:
+          - path: "*/prod.yaml"
+  template:
+    metadata:
+      name: '{{ printf "%s-prod" .path.path }}'
+    spec:
+      project: default
+      sources:
+        - repoURL: https://github.com/Murad-Suleymanov/BasePlate
+          targetRevision: HEAD
+          path: charts/birservice
+          helm:
+            releaseName: '{{ .path.path }}'
+            valueFiles:
+              - '$values/{{ .path.path }}/{{ .path.filename }}'
+        - repoURL: https://github.com/Murad-Suleymanov/BasePlate-Prod
+          targetRevision: HEAD
+          ref: values
+      destination:
+        name: prod-cluster
+        namespace: prod
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

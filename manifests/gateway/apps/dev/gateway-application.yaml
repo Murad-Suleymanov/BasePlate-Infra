@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gateway-dev
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
+    targetRevision: HEAD
+    path: manifests/gateway/resources/dev
+    directory:
+      recurse: true
+  destination:
+    name: dev-cluster
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

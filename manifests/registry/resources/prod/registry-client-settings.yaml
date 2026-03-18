@@ -1,0 +1,15 @@
+# Registry push üçün body size limit — Docker layer-ləri 100MB+ ola bilər
+# 413 Request Entity Too Large xətasının qarşısını alır
+apiVersion: gateway.nginx.org/v1alpha1
+kind: ClientSettingsPolicy
+metadata:
+  name: registry-body-size
+  namespace: registry
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: registry-route
+  body:
+    maxSize: "0"   # 0 = limitsiz (Docker push üçün)
+    timeout: "300s"

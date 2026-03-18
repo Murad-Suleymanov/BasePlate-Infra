@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry-ui
+  namespace: registry
+  labels:
+    app.kubernetes.io/name: registry-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: registry-ui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: registry-ui
+    spec:
+      containers:
+        - name: registry-ui
+          image: joxit/docker-registry-ui:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: NGINX_PROXY_PASS_URL
+              value: "http://registry.registry.svc.cluster.local:5000"
+            - name: REGISTRY_URL
+              value: "https://registry-ui.easysolution.work"
+            - name: PULL_URL
+              value: "https://registry.easysolution.work"
+            - name: SINGLE_REGISTRY
+              value: "true"
+            - name: REGISTRY_TITLE
+              value: "Easy Deploy Registry"
+            - name: REGISTRY_SECURED
+              value: "true"
+            - name: NGINX_PROXY_HEADER_Authorization
+              valueFrom:
+                secretKeyRef:
+                  name: registry-ui-auth
+                  key: basic-auth

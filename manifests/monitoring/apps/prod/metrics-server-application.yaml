@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: metrics-server-prod
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: https://kubernetes-sigs.github.io/metrics-server
+      chart: metrics-server
+      targetRevision: "3.12.2"
+      helm:
+        releaseName: metrics-server
+        valueFiles:
+          - $values/manifests/monitoring/values/prod/metrics-server-values.yaml
+    - repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
+      ref: values
+      targetRevision: HEAD
+  destination:
+    name: prod-cluster
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
