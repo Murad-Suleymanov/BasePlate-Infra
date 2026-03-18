@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-gateway-fabric-dev
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: ghcr.io/nginx/charts
+      chart: nginx-gateway-fabric
+      targetRevision: 2.4.2
+      helm:
+        releaseName: ngf
+        valueFiles:
+          - $values/dev/gateway/values/nginx-gateway-fabric-values.yaml
+    - repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
+      ref: values
+      targetRevision: HEAD
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nginx-gateway
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
