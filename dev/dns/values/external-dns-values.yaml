@@ -1,5 +1,8 @@
 provider:
   name: cloudflare
+# Same zone as prod: isolate TXT ownership for dev cluster.
+txtOwnerId: dev-cluster
+txtPrefix: dev-
 env:
   - name: CF_API_TOKEN
     valueFrom:
