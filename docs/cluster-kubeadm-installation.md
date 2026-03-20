@@ -160,6 +160,75 @@ cd ~/BasePlate
 kubectl apply -f argocd/${ENV}/application-root.yaml
 ```
 
+### ArgoCD password bootstrap (mandatory)
+
+After ArgoCD is installed, set the admin password explicitly.  
+If you skip this step, ArgoCD may continue using the generated initial secret.
+
+Linux/macOS examples:
+
+```bash
+# Example 1: use default password (EasyDeploy2026) for dev
+cd ~/BasePlate-Infra/scripts
+ENV=dev bash set-argocd-password.sh
+
+# Example 2: set a custom password for prod
+ENV=prod bash set-argocd-password.sh 'MyStrongPassword123!'
+```
+
+PowerShell examples:
+
+```powershell
+# Example 1: default password for dev
+cd .\BasePlate-Infra\scripts
+.\set-argocd-password.ps1
+
+# Example 2: custom password for prod
+.\set-argocd-password.ps1 "MyStrongPassword123!" "prod"
+```
+
+Verification:
+
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret
+kubectl -n argocd rollout status deploy/argocd-server
+```
+
+### Grafana password bootstrap
+
+Set Grafana admin credentials after monitoring is synced.
+
+Quick runtime update (immediate):
+
+```bash
+kubectl -n monitoring create secret generic monitoring-grafana \
+  --from-literal=admin-user=admin \
+  --from-literal=admin-password='<GRAFANA_PASSWORD>' \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl -n monitoring rollout restart deploy/monitoring-grafana
+kubectl -n monitoring rollout status deploy/monitoring-grafana
+```
+
+Permanent GitOps update (recommended):
+
+```bash
+# Update the value file for your environment:
+#   dev/monitoring/values/kube-prometheus-stack-values.yaml
+#   prod/monitoring/values/kube-prometheus-stack-values.yaml
+#
+# Example key:
+# grafana:
+#   adminPassword: <GRAFANA_PASSWORD>
+```
+
+Verification:
+
+```bash
+kubectl -n monitoring get secret monitoring-grafana -o jsonpath='{.data.admin-user}' | base64 -d; echo
+kubectl -n monitoring get secret monitoring-grafana -o jsonpath='{.data.admin-password}' | base64 -d; echo
+```
+
 ## 11) Stabilization checks
 
 ```bash

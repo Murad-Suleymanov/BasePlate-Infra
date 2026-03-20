@@ -4,6 +4,13 @@
 #          ./set-argocd-password.sh "MyPassword"
 
 PASSWORD="${1:-EasyDeploy2026}"
+ENVIRONMENT="${ENV:-dev}"
+
+if [ "$ENVIRONMENT" = "prod" ]; then
+  ARGO_HOST="argocd.easysolution.work"
+else
+  ARGO_HOST="argocd-${ENVIRONMENT}.easysolution.work"
+fi
 
 # Pre-generated bcrypt hash for EasyDeploy2026 (zero deps when using default)
 HASH_EASYDEPLOY='$2b$12$.ozrfe.uj.j29CDBY/lw/eMoFsA40jLYbX/FoJDEBG4IgNZh2gomW'
@@ -49,4 +56,4 @@ kubectl -n argocd delete secret argocd-initial-admin-secret --ignore-not-found=t
 kubectl -n argocd rollout restart deployment argocd-server
 
 echo "Password updated: $PASSWORD"
-echo "Wait ~30s for argocd-server rollout, then login at https://argocd.easysolution.work"
+echo "Wait ~30s for argocd-server rollout, then login at https://$ARGO_HOST"
