@@ -29,6 +29,8 @@ spec:
               value: "https://registry.easysolution.work"
             - name: SINGLE_REGISTRY
               value: "true"
+            - name: DELETE_IMAGES
+              value: "true"
             - name: REGISTRY_TITLE
               value: "Easy Deploy Registry"
             - name: REGISTRY_SECURED
