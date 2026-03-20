@@ -11,6 +11,14 @@ kubeEtcd:
 grafana:
   enabled: true
   adminPassword: EasyDeployDev2026!
+  initChownData:
+    enabled: false
+  podSecurityContext:
+    fsGroup: 472
+    fsGroupChangePolicy: OnRootMismatch
+  securityContext:
+    runAsUser: 472
+    runAsGroup: 472
   persistence:
     enabled: true
     storageClassName: local-path
