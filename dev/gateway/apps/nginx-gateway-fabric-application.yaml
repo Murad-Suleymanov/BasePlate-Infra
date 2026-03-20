@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: nginx-gateway-fabric-dev
+  name: nginx-gateway-fabric
   namespace: argocd
 spec:
   project: default
@@ -26,3 +26,4 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+

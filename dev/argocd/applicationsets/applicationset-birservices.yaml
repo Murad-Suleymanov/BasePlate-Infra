@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: easy-deploy-birservices-dev
+  name: easy-deploy-birservices
   namespace: argocd
 spec:
   goTemplate: true
@@ -37,3 +37,4 @@ spec:
           selfHeal: true
         syncOptions:
           - CreateNamespace=true
+

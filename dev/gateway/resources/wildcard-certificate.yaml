@@ -6,7 +6,8 @@ metadata:
 spec:
   secretName: wildcard-tls
   issuerRef:
-    name: letsencrypt-prod
+    name: letsencrypt
     kind: ClusterIssuer
   dnsNames:
     - "*.easysolution.work"
+

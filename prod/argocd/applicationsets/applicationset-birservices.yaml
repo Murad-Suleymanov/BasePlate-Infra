@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: easy-deploy-birservices-prod
+  name: easy-deploy-birservices
   namespace: argocd
 spec:
   goTemplate: true
@@ -14,7 +14,7 @@ spec:
           - path: "*/prod.yaml"
   template:
     metadata:
-      name: '{{ printf "%s-prod" .path.path }}'
+      name: '{{ printf "%s" .path.path }}'
     spec:
       project: default
       sources:
@@ -37,3 +37,4 @@ spec:
           selfHeal: true
         syncOptions:
           - CreateNamespace=true
+
