@@ -11,6 +11,11 @@ kubeEtcd:
 grafana:
   enabled: true
   adminPassword: EasyDeployDev2026!
+  serviceMonitor:
+    enabled: true
+  grafana.ini:
+    metrics:
+      enabled: true
   initChownData:
     enabled: false
   podSecurityContext:
