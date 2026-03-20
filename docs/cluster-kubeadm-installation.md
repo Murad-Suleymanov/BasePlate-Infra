@@ -1,8 +1,8 @@
 # Cluster Runbook (kubeadm, no-surprise flow)
 
-Bu sənəd real qarşılaşdığımız problemlər əsasında hazırlanıb ki növbəti cluster qurulumunda vaxt itirməyək.
+This runbook is based on real issues we encountered, so future cluster setup can be completed without repeated troubleshooting.
 
-Məqsəd: istənilən cluster-i bir dəfəyə `Synced + Healthy` vəziyyətinə gətirmək.
+Goal: bring any cluster to `Synced + Healthy` in one pass.
 
 ## 0) Scope
 
@@ -12,13 +12,11 @@ Məqsəd: istənilən cluster-i bir dəfəyə `Synced + Healthy` vəziyyətinə 
 - GitOps: ArgoCD
 - Repositories:
   - `BasePlate-Infra`
-  - `Easy-Deploy`
+  - `BasePlate` (platform manifests repository)
 - Environment selector:
-  - `ENV=dev` və ya `ENV=prod`
+  - `ENV=dev` or `ENV=prod`
 
----
-
-## 1) Node hazırlığı (OS + kernel)
+## 1) Node preparation (OS + kernel)
 
 ```bash
 sudo apt update && sudo apt -y upgrade
@@ -42,7 +40,7 @@ EOF
 sudo sysctl --system
 ```
 
-## 2) containerd
+## 2) Install containerd
 
 ```bash
 sudo apt -y install containerd
@@ -53,7 +51,7 @@ sudo systemctl restart containerd
 sudo systemctl enable containerd
 ```
 
-## 3) kubeadm/kubelet/kubectl
+## 3) Install kubeadm/kubelet/kubectl
 
 ```bash
 sudo mkdir -p /etc/apt/keyrings
@@ -78,15 +76,15 @@ kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.1/
 kubectl get nodes -o wide
 ```
 
-## 5) Repositories clone
+## 5) Clone repositories
 
 ```bash
 cd ~
 git clone https://github.com/Murad-Suleymanov/BasePlate-Infra.git
-git clone https://github.com/Murad-Suleymanov/Easy-Deploy.git
+git clone https://github.com/Murad-Suleymanov/BasePlate.git
 ```
 
-## 6) ArgoCD install (CRD-safe)
+## 6) Install ArgoCD (CRD-safe)
 
 ```bash
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
@@ -95,7 +93,7 @@ kubectl apply --server-side --force-conflicts -f https://raw.githubusercontent.c
 kubectl get crd applicationsets.argoproj.io
 ```
 
-## 7) Cluster-level dependency CRD-lər (mütləq)
+## 7) Install cluster-level dependency CRDs (mandatory)
 
 ```bash
 cd ~/BasePlate-Infra
@@ -107,7 +105,7 @@ kubectl get crd applicationsets.argoproj.io
 kubectl get crd servicemonitors.monitoring.coreos.com
 ```
 
-## 8) StorageClass (Grafana Pending olmasın)
+## 8) Install StorageClass (avoid Grafana Pending)
 
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml
@@ -115,7 +113,7 @@ kubectl patch storageclass local-path -p '{"metadata":{"annotations":{"storagecl
 kubectl get sc
 ```
 
-## 9) Namespace və secret-lər (sync-dən əvvəl)
+## 9) Create namespaces and secrets (before sync)
 
 ```bash
 kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f -
@@ -124,7 +122,7 @@ kubectl create namespace external-dns --dry-run=client -o yaml | kubectl apply -
 kubectl create namespace easy-deploy-system --dry-run=client -o yaml | kubectl apply -f -
 ```
 
-Cloudflare token iki namespace-də:
+Create Cloudflare token in both namespaces:
 
 ```bash
 kubectl -n external-dns create secret generic cloudflare-api-token \
@@ -136,26 +134,26 @@ kubectl -n cert-manager create secret generic cloudflare-api-token \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 
-Pipeline secret:
+Create pipeline secret:
 
 ```bash
 cd ~/BasePlate-Infra/scripts
 GITHUB_TOKEN=<GITHUB_TOKEN> ./bootstrap-pipeline-secret.sh
 ```
 
-## 10) Sync order (mütləq sıra)
+## 10) Sync order (mandatory)
 
 ```bash
-export ENV=dev   # dev və ya prod
+export ENV=dev   # or prod
 
 cd ~/BasePlate-Infra
 kubectl apply -f argocd/${ENV}/application-root.yaml
 
-cd ~/Easy-Deploy
+cd ~/BasePlate
 kubectl apply -f argocd/${ENV}/application-root.yaml
 ```
 
-## 11) Stabilizasiya komandaları
+## 11) Stabilization checks
 
 ```bash
 kubectl -n argocd get applications
@@ -166,7 +164,7 @@ kubectl get httproute -A
 kubectl get clusterissuer
 ```
 
-Certificate propagation:
+Certificate propagation checks:
 
 ```bash
 kubectl -n nginx-gateway get certificate
@@ -176,19 +174,19 @@ dig TXT _acme-challenge.easysolution.work @8.8.8.8 +short
 
 ## 12) Quick fix map
 
-- `no matches for kind "ApplicationSet"` -> `applicationset-crd.yaml` server-side apply et.
-- `metadata.annotations: Too long` -> CRD-ləri client-side yox, server-side apply et.
-- `no matches for kind "HTTPRoute"` -> `install-gateway-api-crds.sh` işlə.
-- `cloudflare-api-token not found` -> token-i `cert-manager` namespace-də də yarat.
-- Grafana `Pending` + PVC `local-path` -> `local-path-provisioner` qur.
-- App `Synced` amma `Degraded` -> hard refresh + manual sync:
+- `no matches for kind "ApplicationSet"` -> apply `applicationset-crd.yaml` with server-side apply.
+- `metadata.annotations: Too long` -> use server-side apply for CRDs (not client-side).
+- `no matches for kind "HTTPRoute"` -> run `install-gateway-api-crds.sh`.
+- `cloudflare-api-token not found` -> create the secret in `cert-manager` namespace too.
+- Grafana `Pending` + PVC `local-path` -> install `local-path-provisioner`.
+- App `Synced` but `Degraded` -> hard refresh + manual sync:
 
 ```bash
 kubectl -n argocd annotate application <app> argocd.argoproj.io/refresh=hard --overwrite
 kubectl -n argocd patch application <app> --type merge -p '{"operation":{"sync":{"prune":true}}}'
 ```
 
-- ArgoCD controller restart:
+- Restart ArgoCD app controller:
 
 ```bash
 kubectl -n argocd rollout restart statefulset/argocd-application-controller
@@ -196,8 +194,42 @@ kubectl -n argocd rollout restart statefulset/argocd-application-controller
 
 ## 13) Final success criteria
 
-- `kubectl -n argocd get applications` -> əsas app-lar `Synced + Healthy`
-- `kubectl -n nginx-gateway get certificate` -> wildcard cert `Ready=True`
-- `kubectl get clusterissuer` -> `letsencrypt` və `letsencrypt-staging` `True`
+- `kubectl -n argocd get applications` -> core apps are `Synced + Healthy`
+- `kubectl -n nginx-gateway get certificate` -> wildcard cert is `Ready=True`
+- `kubectl get clusterissuer` -> `letsencrypt` and `letsencrypt-staging` are `True`
 - `kubectl -n external-dns get pods` -> `Running`
 - `kubectl -n easy-deploy-system get deploy easy-deploy-operator` -> `READY 1/1`
+
+## 14) Developer YAML rules (important)
+
+Model:
+
+- Folder name = service/app name (example: `hello-nodejs`)
+- File name (`dev.yaml` / `prod.yaml`) = environment selector
+- Namespace = folder name (`hello-nodejs`)  
+  (`dev`/`prod` are not used as namespace names)
+
+New YAML format (HPA + resources):
+
+```yaml
+repo: https://github.com/example/hello-nodejs
+hpa:
+  minReplicas: 2
+  maxReplicas: 5
+resources:
+  requests:
+    memory: 200Mi
+    cpu: 75m
+  limits:
+    memory: 400Mi
+    cpu: 150m
+```
+
+Default behavior:
+
+- If `replicas` is set, HPA is not created (`replicas` has priority)
+- If `resources.requests` is omitted:
+  - `memory=200Mi`
+  - `cpu=75m`
+- If `resources.limits` is omitted:
+  - limits are calculated as `2x` requests
