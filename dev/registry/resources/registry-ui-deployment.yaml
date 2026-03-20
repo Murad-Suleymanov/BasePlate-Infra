@@ -35,8 +35,3 @@ spec:
               value: "Easy Deploy Registry (Dev)"
             - name: REGISTRY_SECURED
               value: "true"
-            - name: NGINX_PROXY_HEADER_Authorization
-              valueFrom:
-                secretKeyRef:
-                  name: registry-ui-auth
-                  key: basic-auth
