@@ -76,6 +76,13 @@ kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.1/
 kubectl get nodes -o wide
 ```
 
+Enable Calico Felix metrics (required for Calico ServiceMonitor on port `9091`):
+
+```bash
+kubectl -n kube-system set env daemonset/calico-node FELIX_PROMETHEUSMETRICSENABLED=true
+kubectl -n kube-system rollout status daemonset/calico-node
+```
+
 ## 5) Clone repositories
 
 ```bash
@@ -179,6 +186,13 @@ dig TXT _acme-challenge.easysolution.work @8.8.8.8 +short
 - `no matches for kind "HTTPRoute"` -> run `install-gateway-api-crds.sh`.
 - `cloudflare-api-token not found` -> create the secret in `cert-manager` namespace too.
 - Grafana `Pending` + PVC `local-path` -> install `local-path-provisioner`.
+- `Error scraping target ... :9091 ... connection refused` (Calico) -> enable Felix metrics:
+
+```bash
+kubectl -n kube-system set env daemonset/calico-node FELIX_PROMETHEUSMETRICSENABLED=true
+kubectl -n kube-system rollout status daemonset/calico-node
+```
+
 - App `Synced` but `Degraded` -> hard refresh + manual sync:
 
 ```bash

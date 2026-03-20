@@ -1,7 +1,6 @@
 # kube-proxy metrics — Prometheus scrape
-# kube-proxy DaemonSet kube-system-də k8s-app=kube-proxy label ilə işləyir
+# kube-proxy DaemonSet runs in kube-system with label k8s-app=kube-proxy
 # Port 10249: /metrics endpoint
-# Qeyd: k3s-də kube-proxy k3s-server binary-da olursa, bu Service heç bir Pod-a uyğun gəlməyə bilər
 ---
 apiVersion: v1
 kind: Service
