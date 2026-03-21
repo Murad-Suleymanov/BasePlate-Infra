@@ -25,7 +25,7 @@ spec:
             releaseName: '{{ .path.path }}'
             valueFiles:
               - '$values/{{ .path.path }}/{{ .path.filename }}'
-        - repoURL: https://github.com/Murad-Suleymanov/BasePlate-Prod
+        - repoURL: https://github.com/Murad-Suleymanov/BasePlate-Dev
           targetRevision: HEAD
           ref: values
       destination:
