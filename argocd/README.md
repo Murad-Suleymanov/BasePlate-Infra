@@ -6,7 +6,8 @@
 
 | Fayl | Məqsəd |
 |------|--------|
-| `application-root.yaml` | root-infra — manifests/ + argocd/ (özünü izləyir) |
+| `application-root.yaml` | root-infra — BasePlate-Infra manifests/ + argocd/ (özünü izləyir) |
+| `application-root-platform.yaml` | root-platform — BasePlate repo-dan platform manifests/ izləyir |
 | `README.md` | Bu fayl |
 
 ### Application tərifləri (manifests/ altında)
@@ -20,8 +21,6 @@
 | `manifests/registry/` | registry-application.yaml |
 | `manifests/argocd/` | argocd-config-application.yaml |
 
-Platform **BasePlate** repo-da öz root-una malikdir: `BasePlate/argocd/`
-
 ### İlk Quraşdırma
 
 ```bash
@@ -29,13 +28,9 @@ Platform **BasePlate** repo-da öz root-una malikdir: `BasePlate/argocd/`
 bash install-gateway-api-crds.sh
 bash install-kube-prometheus-crds.sh
 
-# 2. Infra root apply et
-kubectl apply -f argocd/application-root.yaml
-
-# 3. Platform root apply et (BasePlate repo-dan)
-cd ../BasePlate
+# 2. Infra root apply et (hər iki root-u yaradır)
 kubectl apply -f argocd/application-root.yaml
 ```
 
-**root-infra** (BasePlate-Infra) — gateway, monitoring, cert-manager, dns, registry, argocd-config  
-**root-platform** (BasePlate) — easy-deploy-platform
+**root-infra** — gateway, monitoring, cert-manager, dns, registry, argocd-config  
+**root-platform** — easy-deploy-platform (BasePlate repo-dan izləyir)
