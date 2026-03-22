@@ -5,5 +5,5 @@ registryURL: registry-dev.easysolution.work
 webhookHostname: webhook-dev.easysolution.work
 
 operator:
-  image: ghcr.io/murad-suleymanov/easy-deploy-operator:4043755936e880292bff49e40224e6c65f57395e
+  image: ghcr.io/murad-suleymanov/easy-deploy-operator:2eaa2b2d576529c782f46a14d527c20cb682c587
   replicas: 1
