@@ -1,0 +1,9 @@
+environment: prod
+baseDomain: easysolution.work
+targetIP: "116.203.203.121"
+registryURL: registry.easysolution.work
+webhookHostname: webhook.easysolution.work
+
+operator:
+  image: ghcr.io/murad-suleymanov/easy-deploy-operator:4043755936e880292bff49e40224e6c65f57395e
+  replicas: 1

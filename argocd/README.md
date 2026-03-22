@@ -1,25 +1,25 @@
 ## ArgoCD — BasePlate-Infra
 
-**argocd/** yalnız ArgoCD-ə aid məsələləri saxlayır. Bütün Application tərifləri domain qovluqlarında: `manifests/gateway/`, `manifests/monitoring/` və s.
+**argocd/** yalnız ArgoCD-ə aid məsələləri saxlayır. Bütün Application tərifləri domain qovluqlarında saxlanılır.
 
 ### argocd/ məzmunu
 
 | Fayl | Məqsəd |
 |------|--------|
-| `application-root.yaml` | root-infra — BasePlate-Infra manifests/ + argocd/ (özünü izləyir) |
-| `application-root-platform.yaml` | root-platform — BasePlate repo-dan platform manifests/ izləyir |
+| `application-root.yaml` | root-infra — bütün `*-application.yaml` + argocd/ (özünü izləyir) |
 | `README.md` | Bu fayl |
 
-### Application tərifləri (manifests/ altında)
+### Application tərifləri
 
 | Qovluq | Application faylları |
 |--------|----------------------|
-| `manifests/gateway/` | gateway-application.yaml, nginx-gateway-fabric-application.yaml |
-| `manifests/monitoring/` | monitoring-application.yaml, kube-prometheus-stack-application.yaml, metrics-server-application.yaml |
-| `manifests/cert-manager/` | cert-manager-application.yaml |
-| `manifests/dns/` | external-dns-application.yaml |
-| `manifests/registry/` | registry-application.yaml |
-| `manifests/argocd/` | argocd-config-application.yaml |
+| `{env}/gateway/apps/` | gateway-application.yaml, nginx-gateway-fabric-application.yaml |
+| `{env}/monitoring/apps/` | monitoring-application.yaml, kube-prometheus-stack-application.yaml, metrics-server-application.yaml |
+| `{env}/cert-manager/apps/` | cert-manager-application.yaml |
+| `{env}/dns/apps/` | external-dns-application.yaml |
+| `{env}/registry/apps/` | registry-application.yaml |
+| `{env}/argocd/apps/` | argocd-config-application.yaml, argocd-applicationsets-application.yaml |
+| `{env}/platform/apps/` | easy-deploy-platform-application.yaml |
 
 ### İlk Quraşdırma
 
@@ -28,9 +28,8 @@
 bash install-gateway-api-crds.sh
 bash install-kube-prometheus-crds.sh
 
-# 2. Infra root apply et (hər iki root-u yaradır)
+# 2. Root apply et
 kubectl apply -f argocd/application-root.yaml
 ```
 
-**root-infra** — gateway, monitoring, cert-manager, dns, registry, argocd-config  
-**root-platform** — easy-deploy-platform (BasePlate repo-dan izləyir)
+**root-infra** tək root — gateway, monitoring, cert-manager, dns, registry, argocd-config, platform (hamısı)

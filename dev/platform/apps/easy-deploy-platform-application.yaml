@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: easy-deploy-platform
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: https://github.com/Murad-Suleymanov/BasePlate
+      targetRevision: HEAD
+      path: charts/easy-deploy-platform
+      helm:
+        releaseName: easy-deploy-platform
+        valueFiles:
+          - $values/dev/platform/values/easy-deploy-platform-values.yaml
+    - repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
+      ref: values
+      targetRevision: HEAD
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: easy-deploy-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
