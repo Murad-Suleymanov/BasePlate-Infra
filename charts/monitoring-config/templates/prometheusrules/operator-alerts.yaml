@@ -1,0 +1,45 @@
+{{- if .Values.alerts.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: easy-deploy-operator-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: easy-deploy-operator
+spec:
+  groups:
+    - name: easy-deploy-operator.rules
+      rules:
+        - alert: EasyDeployOperatorDown
+          expr: sum(up{job=~".*easy-deploy-operator.*"}) < 1
+          for: {{ .Values.alerts.operatorDown.for }}
+          labels:
+            severity: {{ .Values.alerts.operatorDown.severity }}
+          annotations:
+            summary: "Easy Deploy operator is down"
+            description: "Prometheus cannot scrape easy-deploy-operator metrics target for {{ .Values.alerts.operatorDown.for }}."
+        - alert: EasyDeployReconcileErrorsHigh
+          expr: sum(rate(easydeploy_reconcile_total{controller="birservice",result="error"}[10m])) > {{ .Values.alerts.reconcileErrorsHigh.threshold }}
+          for: {{ .Values.alerts.reconcileErrorsHigh.for }}
+          labels:
+            severity: {{ .Values.alerts.reconcileErrorsHigh.severity }}
+          annotations:
+            summary: "High BirService reconcile error rate"
+            description: "Reconcile errors are above {{ .Values.alerts.reconcileErrorsHigh.threshold }}/sec for {{ .Values.alerts.reconcileErrorsHigh.for }}."
+        - alert: EasyDeployReconcileSlowP95
+          expr: histogram_quantile(0.95, sum(rate(easydeploy_reconcile_duration_seconds_bucket{controller="birservice"}[10m])) by (le)) > {{ .Values.alerts.reconcileSlowP95.threshold }}
+          for: {{ .Values.alerts.reconcileSlowP95.for }}
+          labels:
+            severity: {{ .Values.alerts.reconcileSlowP95.severity }}
+          annotations:
+            summary: "BirService reconcile latency is high"
+            description: "P95 reconcile duration is above {{ .Values.alerts.reconcileSlowP95.threshold }} seconds for {{ .Values.alerts.reconcileSlowP95.for }}."
+        - alert: EasyDeployBuildFailuresDetected
+          expr: sum(increase(easydeploy_build_status_total{status=~"failed|error"}[30m])) > 0
+          for: {{ .Values.alerts.buildFailures.for }}
+          labels:
+            severity: {{ .Values.alerts.buildFailures.severity }}
+          annotations:
+            summary: "Build failures detected by operator"
+            description: "At least one build failed during the last 30 minutes."
+{{- end }}

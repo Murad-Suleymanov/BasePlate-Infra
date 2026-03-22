@@ -5,12 +5,17 @@ metadata:
   namespace: argocd
 spec:
   project: default
-  source:
-    repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
-    targetRevision: HEAD
-    path: prod/monitoring/resources
-    directory:
-      recurse: true
+  sources:
+    - repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
+      targetRevision: HEAD
+      path: charts/monitoring-config
+      helm:
+        releaseName: monitoring-config
+        valueFiles:
+          - $values/prod/monitoring/values/monitoring-config-values.yaml
+    - repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
+      ref: values
+      targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
   syncPolicy:
@@ -19,4 +24,3 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-

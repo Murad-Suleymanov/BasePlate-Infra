@@ -1,0 +1,36 @@
+{{- if .Values.serviceMonitors.calico.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calico-felix-metrics
+  namespace: kube-system
+  labels:
+    k8s-app: calico-node
+spec:
+  clusterIP: None
+  ports:
+    - port: 9091
+      protocol: TCP
+      name: metrics
+  selector:
+    k8s-app: calico-node
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: calico-felix
+  namespace: kube-system
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      k8s-app: calico-node
+  namespaceSelector:
+    matchNames: [kube-system]
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: {{ .Values.scrapeInterval }}
+{{- end }}

@@ -1,0 +1,4 @@
+targetIP: "116.203.203.121"
+registryHostname: registry.easysolution.work
+registryUIHostname: registry-ui.easysolution.work
+registryTitle: "Easy Deploy Registry"

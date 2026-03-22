@@ -1,0 +1,37 @@
+targetIP: "178.104.84.100"
+grafanaHostname: grafana-dev.easysolution.work
+
+scrapeInterval: 30s
+
+alerts:
+  enabled: true
+  operatorDown:
+    for: 5m
+    severity: critical
+  reconcileErrorsHigh:
+    threshold: 0.1
+    for: 10m
+    severity: warning
+  reconcileSlowP95:
+    threshold: 5
+    for: 10m
+    severity: warning
+  buildFailures:
+    for: 5m
+    severity: warning
+
+dashboards:
+  operatorMetrics:
+    enabled: true
+    refreshInterval: 30s
+  birservice:
+    enabled: true
+    refreshInterval: 30s
+
+serviceMonitors:
+  operator:
+    enabled: true
+  kubeProxy:
+    enabled: true
+  calico:
+    enabled: true

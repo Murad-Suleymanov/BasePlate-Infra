@@ -1,0 +1,6 @@
+apiVersion: v2
+name: argocd-config
+description: ArgoCD server config, route, and reference grant
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
