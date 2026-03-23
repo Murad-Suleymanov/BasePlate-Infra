@@ -1,0 +1,5 @@
+apiVersion: v2
+name: infra-applications
+description: ArgoCD Application definitions for infrastructure components
+version: 1.0.0
+type: application

@@ -1,0 +1,152 @@
+environment: prod
+
+infra:
+  repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
+  targetRevision: HEAD
+
+project: default
+argocdNamespace: argocd
+destinationServer: https://kubernetes.default.svc
+
+syncPolicy:
+  automated:
+    prune: true
+    selfHeal: true
+
+applications:
+  argocd-config:
+    enabled: true
+    destinationNamespace: argocd
+    source:
+      path: charts/argocd-config
+      helm:
+        releaseName: argocd-config
+    valuesPath: argocd/values/argocd-config-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+
+  argocd-applicationsets:
+    enabled: true
+    destinationNamespace: argocd
+    source:
+      path: charts/applicationsets
+      helm:
+        releaseName: applicationsets
+    valuesPath: argocd/values/applicationsets-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+
+  easy-deploy-platform:
+    enabled: true
+    destinationNamespace: easy-deploy-system
+    source:
+      repoURL: https://github.com/Murad-Suleymanov/BasePlate
+      targetRevision: HEAD
+      path: charts/easy-deploy-platform
+      helm:
+        releaseName: easy-deploy-platform
+    valuesPath: platform/values/easy-deploy-platform-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+
+  monitoring-config:
+    enabled: true
+    source:
+      path: charts/monitoring-config
+      helm:
+        releaseName: monitoring-config
+    valuesPath: monitoring/values/monitoring-config-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+
+  registry:
+    enabled: true
+    destinationNamespace: registry
+    source:
+      path: charts/registry
+      helm:
+        releaseName: registry
+    valuesPath: registry/values/registry-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+
+  gateway-config:
+    enabled: true
+    destinationNamespace: nginx-gateway
+    source:
+      path: charts/gateway-config
+      helm:
+        releaseName: gateway-config
+    valuesPath: gateway/values/gateway-config-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+
+  cert-manager:
+    enabled: true
+    destinationNamespace: cert-manager
+    source:
+      repoURL: https://charts.jetstack.io
+      chart: cert-manager
+      targetRevision: v1.17.2
+      helm:
+        releaseName: cert-manager
+    valuesPath: cert-manager/values/cert-manager-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+
+  external-dns:
+    enabled: true
+    destinationNamespace: external-dns
+    source:
+      repoURL: https://kubernetes-sigs.github.io/external-dns
+      chart: external-dns
+      targetRevision: "1.16.1"
+      helm:
+        releaseName: external-dns
+    valuesPath: dns/values/external-dns-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+
+  nginx-gateway-fabric:
+    enabled: true
+    destinationNamespace: nginx-gateway
+    source:
+      repoURL: ghcr.io/nginx/charts
+      chart: nginx-gateway-fabric
+      targetRevision: "2.4.2"
+      helm:
+        releaseName: ngf
+    valuesPath: gateway/values/nginx-gateway-fabric-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+
+  kube-prometheus-stack:
+    enabled: true
+    destinationNamespace: monitoring
+    source:
+      repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: "82.4.3"
+      helm:
+        releaseName: monitoring
+        skipCrds: true
+    valuesPath: monitoring/values/kube-prometheus-stack-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+
+  metrics-server:
+    enabled: true
+    destinationNamespace: kube-system
+    source:
+      repoURL: https://kubernetes-sigs.github.io/metrics-server
+      chart: metrics-server
+      targetRevision: "3.12.2"
+      helm:
+        releaseName: metrics-server
+    valuesPath: monitoring/values/metrics-server-values.yaml
+    syncOptions:
+      - CreateNamespace=true

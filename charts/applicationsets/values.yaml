@@ -1,0 +1,30 @@
+environment: prod
+
+argocdNamespace: argocd
+project: default
+destinationServer: https://kubernetes.default.svc
+
+devRepo:
+  repoURL: https://github.com/Murad-Suleymanov/BasePlate-Dev
+  targetRevision: HEAD
+
+chartRepo:
+  repoURL: https://github.com/Murad-Suleymanov/BasePlate
+  targetRevision: HEAD
+
+applicationSets:
+  birservices:
+    enabled: true
+    name: easy-deploy-birservices
+    goTemplate: true
+    goTemplateOptions:
+      - "missingkey=error"
+    filePattern: "*/prod.yaml"
+    nameSuffix: ""
+    chartPath: charts/birservice
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+        - CreateNamespace=true

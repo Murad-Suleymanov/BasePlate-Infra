@@ -1,0 +1,40 @@
+{{- range $key, $appSet := .Values.applicationSets }}
+{{- if $appSet.enabled }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: {{ $appSet.name }}
+  namespace: {{ $.Values.argocdNamespace }}
+spec:
+  goTemplate: {{ $appSet.goTemplate }}
+  goTemplateOptions: {{ $appSet.goTemplateOptions | toJson }}
+  generators:
+    - git:
+        repoURL: {{ $.Values.devRepo.repoURL }}
+        revision: {{ $.Values.devRepo.targetRevision }}
+        files:
+          - path: {{ $appSet.filePattern | quote }}
+  template:
+    metadata:
+      name: '{{ "{{" }} printf "%s{{ $appSet.nameSuffix }}" .path.path {{ "}}" }}'
+    spec:
+      project: {{ $.Values.project }}
+      sources:
+        - repoURL: {{ $.Values.chartRepo.repoURL }}
+          targetRevision: {{ $.Values.chartRepo.targetRevision }}
+          path: {{ $appSet.chartPath }}
+          helm:
+            releaseName: '{{ "{{" }} .path.path {{ "}}" }}'
+            valueFiles:
+              - '$values/{{ "{{" }} .path.path {{ "}}" }}/{{ "{{" }} .path.filename {{ "}}" }}'
+        - repoURL: {{ $.Values.devRepo.repoURL }}
+          targetRevision: {{ $.Values.devRepo.targetRevision }}
+          ref: values
+      destination:
+        server: {{ $.Values.destinationServer }}
+        namespace: '{{ "{{" }} .path.path {{ "}}" }}'
+      syncPolicy:
+{{- toYaml $appSet.syncPolicy | nindent 8 }}
+{{- end }}
+{{- end }}

@@ -52,8 +52,6 @@ extraDashboards: {}
 serviceMonitors:
   operator:
     enabled: true
-  kubeProxy:
-    enabled: true
   calico:
     enabled: true
 

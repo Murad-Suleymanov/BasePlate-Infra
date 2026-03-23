@@ -1,0 +1,51 @@
+{{- range $name, $app := .Values.applications }}
+{{- if $app.enabled }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Values.argocdNamespace }}
+spec:
+  project: {{ $.Values.project }}
+  sources:
+{{- if $app.source.chart }}
+    - repoURL: {{ $app.source.repoURL }}
+      chart: {{ $app.source.chart }}
+      targetRevision: {{ $app.source.targetRevision }}
+      helm:
+        releaseName: {{ $app.source.helm.releaseName }}
+{{- if $app.source.helm.skipCrds }}
+        skipCrds: {{ $app.source.helm.skipCrds }}
+{{- end }}
+        valueFiles:
+          - $values/{{ $.Values.environment }}/{{ $app.valuesPath }}
+{{- else }}
+    - repoURL: {{ default $.Values.infra.repoURL $app.source.repoURL }}
+      targetRevision: {{ default $.Values.infra.targetRevision $app.source.targetRevision }}
+      path: {{ $app.source.path }}
+      helm:
+        releaseName: {{ $app.source.helm.releaseName }}
+        valueFiles:
+          - $values/{{ $.Values.environment }}/{{ $app.valuesPath }}
+{{- end }}
+    - repoURL: {{ $.Values.infra.repoURL }}
+      ref: values
+      targetRevision: {{ $.Values.infra.targetRevision }}
+  destination:
+    server: {{ $.Values.destinationServer }}
+{{- if $app.destinationNamespace }}
+    namespace: {{ $app.destinationNamespace }}
+{{- end }}
+  syncPolicy:
+    automated:
+      prune: {{ default true $.Values.syncPolicy.automated.prune }}
+      selfHeal: {{ default true $.Values.syncPolicy.automated.selfHeal }}
+{{- if $app.syncOptions }}
+    syncOptions:
+{{- range $app.syncOptions }}
+      - {{ . }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

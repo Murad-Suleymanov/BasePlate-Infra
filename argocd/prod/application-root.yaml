@@ -8,16 +8,14 @@ spec:
   sources:
     - repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
       targetRevision: HEAD
-      path: prod
-      directory:
-        recurse: true
-        include: '*-application.yaml'
+      path: charts/infra-applications
+      helm:
+        releaseName: infra-applications
+        valueFiles:
+          - $values/prod/infra-applications-values.yaml
     - repoURL: https://github.com/Murad-Suleymanov/BasePlate-Infra
+      ref: values
       targetRevision: HEAD
-      path: argocd/prod
-      directory:
-        recurse: true
-        include: '*.yaml'
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
