@@ -141,6 +141,15 @@ kubectl -n cert-manager create secret generic cloudflare-api-token \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 
+Create Grafana admin secret:
+
+```bash
+kubectl -n monitoring create secret generic grafana-admin-secret \
+  --from-literal=admin-user=admin \
+  --from-literal=admin-password='<GRAFANA_PASSWORD>' \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
 Create pipeline secret:
 
 ```bash
@@ -194,39 +203,35 @@ kubectl -n argocd get secret argocd-initial-admin-secret
 kubectl -n argocd rollout status deploy/argocd-server
 ```
 
-### Grafana password bootstrap
+### Grafana password bootstrap (mandatory)
 
-Set Grafana admin credentials after monitoring is synced.
-
-Quick runtime update (immediate):
+Grafana reads admin credentials from a Kubernetes Secret (`grafana-admin-secret`).
+This secret must be created **before** monitoring is synced.
 
 ```bash
-kubectl -n monitoring create secret generic monitoring-grafana \
+kubectl -n monitoring create secret generic grafana-admin-secret \
   --from-literal=admin-user=admin \
   --from-literal=admin-password='<GRAFANA_PASSWORD>' \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+To rotate the password later:
+
+```bash
+kubectl -n monitoring create secret generic grafana-admin-secret \
+  --from-literal=admin-user=admin \
+  --from-literal=admin-password='<NEW_PASSWORD>' \
   --dry-run=client -o yaml | kubectl apply -f -
 
 kubectl -n monitoring rollout restart deploy/monitoring-grafana
 kubectl -n monitoring rollout status deploy/monitoring-grafana
 ```
 
-Permanent GitOps update (recommended):
-
-```bash
-# Update the value file for your environment:
-#   dev/monitoring/values/kube-prometheus-stack-values.yaml
-#   prod/monitoring/values/kube-prometheus-stack-values.yaml
-#
-# Example key:
-# grafana:
-#   adminPassword: <GRAFANA_PASSWORD>
-```
-
 Verification:
 
 ```bash
-kubectl -n monitoring get secret monitoring-grafana -o jsonpath='{.data.admin-user}' | base64 -d; echo
-kubectl -n monitoring get secret monitoring-grafana -o jsonpath='{.data.admin-password}' | base64 -d; echo
+kubectl -n monitoring get secret grafana-admin-secret -o jsonpath='{.data.admin-user}' | base64 -d; echo
+kubectl -n monitoring get secret grafana-admin-secret -o jsonpath='{.data.admin-password}' | base64 -d; echo
 ```
 
 ## 11) Stabilization checks

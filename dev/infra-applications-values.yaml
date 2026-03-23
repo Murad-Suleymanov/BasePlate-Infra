@@ -21,7 +21,7 @@ applications:
       path: charts/argocd-config
       helm:
         releaseName: argocd-config
-    valuesPath: argocd/values/argocd-config-values.yaml
+    valuesPath: argocd-config/values/argocd-config-values.yaml
     syncOptions:
       - CreateNamespace=true
 
@@ -32,7 +32,7 @@ applications:
       path: charts/applicationsets
       helm:
         releaseName: applicationsets
-    valuesPath: argocd/values/applicationsets-values.yaml
+    valuesPath: applicationsets/values/applicationsets-values.yaml
     syncOptions:
       - CreateNamespace=true
 
@@ -56,7 +56,7 @@ applications:
       path: charts/monitoring-config
       helm:
         releaseName: monitoring-config
-    valuesPath: monitoring/values/monitoring-config-values.yaml
+    valuesPath: monitoring-config/values/monitoring-config-values.yaml
     syncOptions:
       - CreateNamespace=true
 
@@ -78,7 +78,7 @@ applications:
       path: charts/gateway-config
       helm:
         releaseName: gateway-config
-    valuesPath: gateway/values/gateway-config-values.yaml
+    valuesPath: gateway-config/values/gateway-config-values.yaml
     syncOptions:
       - CreateNamespace=true
 
@@ -118,7 +118,7 @@ applications:
       targetRevision: "2.4.2"
       helm:
         releaseName: ngf
-    valuesPath: gateway/values/nginx-gateway-fabric-values.yaml
+    valuesPath: nginx-gateway-fabric/values/nginx-gateway-fabric-values.yaml
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
@@ -133,7 +133,7 @@ applications:
       helm:
         releaseName: monitoring
         skipCrds: true
-    valuesPath: monitoring/values/kube-prometheus-stack-values.yaml
+    valuesPath: kube-prometheus-stack/values/kube-prometheus-stack-values.yaml
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
@@ -147,6 +147,6 @@ applications:
       targetRevision: "3.12.2"
       helm:
         releaseName: metrics-server
-    valuesPath: monitoring/values/metrics-server-values.yaml
+    valuesPath: metrics-server/values/metrics-server-values.yaml
     syncOptions:
       - CreateNamespace=true

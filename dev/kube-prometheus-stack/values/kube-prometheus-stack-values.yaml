@@ -10,7 +10,10 @@ kubeEtcd:
 
 grafana:
   enabled: true
-  adminPassword: EasyDeployDev2026!
+  admin:
+    existingSecret: grafana-admin-secret
+    userKey: admin-user
+    passwordKey: admin-password
   serviceMonitor:
     enabled: true
   grafana.ini:
