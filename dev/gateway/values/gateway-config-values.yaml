@@ -1,2 +1,44 @@
 targetIP: "178.104.84.100"
 baseDomain: easysolution.work
+acmeEmail: admin@easysolution.work
+
+gateway:
+  name: main-gateway
+  namespace: nginx-gateway
+  className: nginx
+  listeners:
+    - name: http
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      port: 443
+      protocol: HTTPS
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: wildcard-tls
+            namespace: nginx-gateway
+  extraListeners: []
+
+wildcard:
+  name: wildcard-easysolution
+  secretName: wildcard-tls
+
+cloudflare:
+  secretName: cloudflare-api-token
+  secretKey: cloudflare_api_token
+
+letsencrypt:
+  accountKeySecret: letsencrypt-account-key
+  staging:
+    enabled: true
+    accountKeySecret: letsencrypt-staging-account-key
+
+extraCertificates: []

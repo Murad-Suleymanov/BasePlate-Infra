@@ -1,10 +1,10 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: wildcard-easysolution
-  namespace: nginx-gateway
+  name: {{ .Values.wildcard.name }}
+  namespace: {{ .Values.gateway.namespace }}
 spec:
-  secretName: wildcard-tls
+  secretName: {{ .Values.wildcard.secretName }}
   issuerRef:
     name: letsencrypt
     kind: ClusterIssuer

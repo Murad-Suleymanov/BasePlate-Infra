@@ -1,2 +1,19 @@
 targetIP: ""
 hostname: ""
+
+namespace: argocd
+
+serverInsecure: true
+
+gateway:
+  name: main-gateway
+  namespace: nginx-gateway
+
+route:
+  name: argocd-route
+  sections: [http, https]
+  backendService: argocd-server
+  backendPort: 80
+
+extraConfigMaps: {}
+extraRoutes: []

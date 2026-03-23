@@ -2,11 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: registry-ui
-  namespace: registry
+  namespace: {{ .Values.namespace }}
   labels:
     app.kubernetes.io/name: registry-ui
 spec:
-  replicas: 1
+  replicas: {{ .Values.ui.replicas }}
   selector:
     matchLabels:
       app.kubernetes.io/name: registry-ui
@@ -17,12 +17,12 @@ spec:
     spec:
       containers:
         - name: registry-ui
-          image: joxit/docker-registry-ui:latest
+          image: {{ .Values.ui.image }}
           ports:
-            - containerPort: 80
+            - containerPort: {{ .Values.ui.port }}
           env:
             - name: NGINX_PROXY_PASS_URL
-              value: "http://registry.registry.svc.cluster.local:5000"
+              value: "http://registry.{{ .Values.namespace }}.svc.cluster.local:{{ .Values.registry.port }}"
             - name: REGISTRY_URL
               value: "https://{{ .Values.registryUIHostname }}"
             - name: PULL_URL
@@ -35,3 +35,7 @@ spec:
               value: {{ .Values.registryTitle | quote }}
             - name: REGISTRY_SECURED
               value: "true"
+{{- range .Values.ui.extraEnv }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+{{- end }}

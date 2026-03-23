@@ -5,24 +5,25 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: admin@{{ .Values.baseDomain }}
+    email: {{ .Values.acmeEmail }}
     privateKeySecretRef:
-      name: letsencrypt-account-key
+      name: {{ .Values.letsencrypt.accountKeySecret }}
     solvers:
       - dns01:
           cloudflare:
             apiTokenSecretRef:
-              name: cloudflare-api-token
-              key: cloudflare_api_token
+              name: {{ .Values.cloudflare.secretName }}
+              key: {{ .Values.cloudflare.secretKey }}
         selector:
           dnsZones:
             - {{ .Values.baseDomain | quote }}
       - http01:
           gatewayHTTPRoute:
             parentRefs:
-              - name: main-gateway
-                namespace: nginx-gateway
+              - name: {{ .Values.gateway.name }}
+                namespace: {{ .Values.gateway.namespace }}
                 kind: Gateway
+{{- if .Values.letsencrypt.staging.enabled }}
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -31,21 +32,22 @@ metadata:
 spec:
   acme:
     server: https://acme-staging-v02.api.letsencrypt.org/directory
-    email: admin@{{ .Values.baseDomain }}
+    email: {{ .Values.acmeEmail }}
     privateKeySecretRef:
-      name: letsencrypt-staging-account-key
+      name: {{ .Values.letsencrypt.staging.accountKeySecret }}
     solvers:
       - dns01:
           cloudflare:
             apiTokenSecretRef:
-              name: cloudflare-api-token
-              key: cloudflare_api_token
+              name: {{ .Values.cloudflare.secretName }}
+              key: {{ .Values.cloudflare.secretKey }}
         selector:
           dnsZones:
             - {{ .Values.baseDomain | quote }}
       - http01:
           gatewayHTTPRoute:
             parentRefs:
-              - name: main-gateway
-                namespace: nginx-gateway
+              - name: {{ .Values.gateway.name }}
+                namespace: {{ .Values.gateway.namespace }}
                 kind: Gateway
+{{- end }}

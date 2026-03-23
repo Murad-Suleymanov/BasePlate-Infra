@@ -2,3 +2,38 @@ targetIP: "116.203.203.121"
 registryHostname: registry.easysolution.work
 registryUIHostname: registry-ui.easysolution.work
 registryTitle: "Easy Deploy Registry"
+
+namespace: registry
+
+gateway:
+  name: main-gateway
+  namespace: nginx-gateway
+
+registry:
+  image: registry:2
+  replicas: 1
+  port: 5000
+  storageHostPath: /opt/registry-data
+  service:
+    type: NodePort
+    nodePort: 30500
+  auth:
+    htpasswd: "admin:$2b$12$ElakXmXzA2h4eKLUY0PUeOrbqJ9TVe0GaCLChHU4tUU3gEC/WuUUm\n"
+  extraEnv: []
+  extraVolumes: []
+  extraVolumeMounts: []
+
+ui:
+  image: joxit/docker-registry-ui:latest
+  replicas: 1
+  port: 80
+  auth:
+    basicAuth: "Basic YWRtaW46RWFzeURlcGxveTIwMjY="
+  extraEnv: []
+
+route:
+  sections: [http, https]
+
+clientSettings:
+  maxSize: "0"
+  timeout: "300s"

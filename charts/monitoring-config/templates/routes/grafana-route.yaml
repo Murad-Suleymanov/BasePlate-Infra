@@ -1,21 +1,20 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: grafana-route
-  namespace: monitoring
+  name: {{ .Values.grafana.route.name }}
+  namespace: {{ .Values.namespace }}
   annotations:
     external-dns.alpha.kubernetes.io/target: {{ .Values.targetIP | quote }}
 spec:
   parentRefs:
-    - name: main-gateway
-      namespace: nginx-gateway
-      sectionName: http
-    - name: main-gateway
-      namespace: nginx-gateway
-      sectionName: https
+    {{- range .Values.grafana.route.sections }}
+    - name: {{ $.Values.gateway.name }}
+      namespace: {{ $.Values.gateway.namespace }}
+      sectionName: {{ . }}
+    {{- end }}
   hostnames:
     - {{ .Values.grafanaHostname }}
   rules:
     - backendRefs:
-        - name: monitoring-grafana
-          port: 80
+        - name: {{ .Values.grafana.backendService }}
+          port: {{ .Values.grafana.backendPort }}

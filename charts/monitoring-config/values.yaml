@@ -1,3 +1,22 @@
+namespace: monitoring
+
+gateway:
+  name: main-gateway
+  namespace: nginx-gateway
+
+grafana:
+  route:
+    name: grafana-route
+    sections:
+      - http
+      - https
+  backendService: monitoring-grafana
+  backendPort: 80
+
+operator:
+  namespace: easy-deploy-system
+  labelName: easy-deploy-operator
+
 targetIP: ""
 grafanaHostname: ""
 
@@ -20,6 +39,16 @@ alerts:
     for: 5m
     severity: warning
 
+# extraAlertRules:
+#   - alert: MyCustomAlert
+#     expr: some_metric > 100
+#     for: 5m
+#     labels:
+#       severity: warning
+#     annotations:
+#       summary: "Custom alert fired"
+extraAlertRules: []
+
 dashboards:
   operatorMetrics:
     enabled: true
@@ -28,6 +57,12 @@ dashboards:
     enabled: true
     refreshInterval: 30s
 
+# extraDashboards:
+#   my-dashboard:
+#     json: |
+#       { "title": "My Dashboard", ... }
+extraDashboards: {}
+
 serviceMonitors:
   operator:
     enabled: true
@@ -35,3 +70,14 @@ serviceMonitors:
     enabled: true
   calico:
     enabled: true
+
+# extraServiceMonitors:
+#   - name: my-app
+#     namespace: my-namespace
+#     selector:
+#       matchLabels:
+#         app: my-app
+#     endpoints:
+#       - port: metrics
+#         path: /metrics
+extraServiceMonitors: []

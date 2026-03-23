@@ -1,0 +1,14 @@
+{{- range $name, $dashboard := .Values.extraDashboards }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-{{ $name }}-dashboard
+  namespace: {{ $.Values.namespace }}
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/name: {{ $name }}-dashboard
+data:
+  {{ $name }}.json: |
+{{ $dashboard.json | indent 4 }}
+{{- end }}

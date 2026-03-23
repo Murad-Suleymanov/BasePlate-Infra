@@ -1,0 +1,24 @@
+{{- range .Values.extraServiceMonitors }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .name }}
+  namespace: {{ .namespace | default "monitoring" }}
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+{{- range $k, $v := .selector.matchLabels }}
+      {{ $k }}: {{ $v | quote }}
+{{- end }}
+  namespaceSelector:
+    matchNames: [{{ .namespace | default "monitoring" }}]
+  endpoints:
+{{- range .endpoints }}
+    - port: {{ .port }}
+      path: {{ .path | default "/metrics" }}
+      interval: {{ .interval | default $.Values.scrapeInterval }}
+{{- end }}
+{{- end }}

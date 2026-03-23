@@ -2,11 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: registry
-  namespace: registry
+  namespace: {{ .Values.namespace }}
   labels:
     app.kubernetes.io/name: registry
 spec:
-  replicas: 1
+  replicas: {{ .Values.registry.replicas }}
   selector:
     matchLabels:
       app.kubernetes.io/name: registry
@@ -17,15 +17,22 @@ spec:
     spec:
       containers:
         - name: registry
-          image: registry:2
+          image: {{ .Values.registry.image }}
           ports:
-            - containerPort: 5000
+            - containerPort: {{ .Values.registry.port }}
           volumeMounts:
             - name: registry-data
               mountPath: /var/lib/registry
             - name: registry-auth
               mountPath: /auth
               readOnly: true
+{{- range .Values.registry.extraVolumeMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+{{- if .readOnly }}
+              readOnly: {{ .readOnly }}
+{{- end }}
+{{- end }}
           env:
             - name: REGISTRY_STORAGE_DELETE_ENABLED
               value: "true"
@@ -45,10 +52,14 @@ spec:
               value: /auth/htpasswd
             - name: REGISTRY_AUTH_HTPASSWD_REALM
               value: Registry Realm
+{{- range .Values.registry.extraEnv }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+{{- end }}
       volumes:
         - name: registry-data
           hostPath:
-            path: /opt/registry-data
+            path: {{ .Values.registry.storageHostPath }}
             type: DirectoryOrCreate
         - name: registry-auth
           secret:
@@ -56,3 +67,18 @@ spec:
             items:
               - key: htpasswd
                 path: htpasswd
+{{- range .Values.registry.extraVolumes }}
+        - name: {{ .name }}
+{{- if .emptyDir }}
+          emptyDir: {}
+{{- end }}
+{{- if .hostPath }}
+          hostPath:
+            path: {{ .hostPath.path }}
+            type: {{ .hostPath.type | default "DirectoryOrCreate" }}
+{{- end }}
+{{- if .secret }}
+          secret:
+            secretName: {{ .secret.secretName }}
+{{- end }}
+{{- end }}

@@ -2,6 +2,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: argocd-cmd-params-cm
-  namespace: argocd
+  namespace: {{ .Values.namespace }}
 data:
-  server.insecure: "true"
+  server.insecure: {{ .Values.serverInsecure | quote }}

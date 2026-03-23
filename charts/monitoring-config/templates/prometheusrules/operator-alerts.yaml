@@ -2,22 +2,22 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: easy-deploy-operator-alerts
-  namespace: monitoring
+  name: {{ .Values.operator.labelName }}-alerts
+  namespace: {{ .Values.namespace }}
   labels:
-    app.kubernetes.io/name: easy-deploy-operator
+    app.kubernetes.io/name: {{ .Values.operator.labelName }}
 spec:
   groups:
-    - name: easy-deploy-operator.rules
+    - name: {{ .Values.operator.labelName }}.rules
       rules:
         - alert: EasyDeployOperatorDown
-          expr: sum(up{job=~".*easy-deploy-operator.*"}) < 1
+          expr: sum(up{job=~".*{{ .Values.operator.labelName }}.*"}) < 1
           for: {{ .Values.alerts.operatorDown.for }}
           labels:
             severity: {{ .Values.alerts.operatorDown.severity }}
           annotations:
             summary: "Easy Deploy operator is down"
-            description: "Prometheus cannot scrape easy-deploy-operator metrics target for {{ .Values.alerts.operatorDown.for }}."
+            description: "Prometheus cannot scrape {{ .Values.operator.labelName }} metrics target for {{ .Values.alerts.operatorDown.for }}."
         - alert: EasyDeployReconcileErrorsHigh
           expr: sum(rate(easydeploy_reconcile_total{controller="birservice",result="error"}[10m])) > {{ .Values.alerts.reconcileErrorsHigh.threshold }}
           for: {{ .Values.alerts.reconcileErrorsHigh.for }}
@@ -42,4 +42,15 @@ spec:
           annotations:
             summary: "Build failures detected by operator"
             description: "At least one build failed during the last 30 minutes."
+{{- range .Values.extraAlertRules }}
+        - alert: {{ .alert }}
+          expr: {{ .expr }}
+          for: {{ .for }}
+          labels:
+            severity: {{ .labels.severity }}
+          annotations:
+{{- range $k, $v := .annotations }}
+            {{ $k }}: {{ $v | quote }}
+{{- end }}
+{{- end }}
 {{- end }}

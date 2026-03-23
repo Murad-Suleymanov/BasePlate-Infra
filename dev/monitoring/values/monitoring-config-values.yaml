@@ -1,3 +1,20 @@
+namespace: monitoring
+
+gateway:
+  name: main-gateway
+  namespace: nginx-gateway
+
+grafana:
+  route:
+    name: grafana-route
+    sections: [http, https]
+  backendService: monitoring-grafana
+  backendPort: 80
+
+operator:
+  namespace: easy-deploy-system
+  labelName: easy-deploy-operator
+
 targetIP: "178.104.84.100"
 grafanaHostname: grafana-dev.easysolution.work
 
@@ -20,6 +37,8 @@ alerts:
     for: 5m
     severity: warning
 
+extraAlertRules: []
+
 dashboards:
   operatorMetrics:
     enabled: true
@@ -28,6 +47,8 @@ dashboards:
     enabled: true
     refreshInterval: 30s
 
+extraDashboards: {}
+
 serviceMonitors:
   operator:
     enabled: true
@@ -35,3 +56,5 @@ serviceMonitors:
     enabled: true
   calico:
     enabled: true
+
+extraServiceMonitors: []
