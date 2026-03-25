@@ -28,6 +28,6 @@ external_services:
     url: https://grafana.easysolution.work
   tracing:
     enabled: true
-    in_cluster_url: http://jaeger-query.istio-system:16686
+    in_cluster_url: http://jaeger.istio-system:16686
     url: https://jaeger.easysolution.work
     use_grpc: false

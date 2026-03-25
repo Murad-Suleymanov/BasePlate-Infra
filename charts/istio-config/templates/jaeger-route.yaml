@@ -26,7 +26,7 @@ spec:
       backendRefs:
         - group: ""
           kind: Service
-          name: jaeger-query
+          name: jaeger
           port: 16686
           weight: 1
 {{- end }}
