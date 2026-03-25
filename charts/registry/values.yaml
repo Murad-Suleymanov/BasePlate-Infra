@@ -18,7 +18,8 @@ registry:
     type: NodePort
     nodePort: 30500
   auth:
-    htpasswd: "admin:$2b$12$ElakXmXzA2h4eKLUY0PUeOrbqJ9TVe0GaCLChHU4tUU3gEC/WuUUm\n"
+    existingSecret: false
+    htpasswd: ""
   # extraEnv:
   #   - name: REGISTRY_STORAGE_S3_BUCKET
   #     value: my-bucket
@@ -36,8 +37,6 @@ ui:
   image: joxit/docker-registry-ui:latest
   replicas: 1
   port: 80
-  auth:
-    basicAuth: "Basic YWRtaW46RWFzeURlcGxveTIwMjY="
   # extraEnv:
   #   - name: SHOW_CONTENT_DIGEST
   #     value: "true"

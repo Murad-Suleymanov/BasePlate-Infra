@@ -150,3 +150,39 @@ applications:
     valuesPath: metrics-server/values/metrics-server-values.yaml
     syncOptions:
       - CreateNamespace=true
+
+  vault:
+    enabled: false
+    destinationNamespace: vault
+    source:
+      repoURL: https://helm.releases.hashicorp.com
+      chart: vault
+      targetRevision: "0.29.1"
+      helm:
+        releaseName: vault
+    valuesPath: vault/values/vault-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+
+  vault-secrets-operator:
+    enabled: true
+    destinationNamespace: vault-secrets-operator-system
+    source:
+      repoURL: https://helm.releases.hashicorp.com
+      chart: vault-secrets-operator
+      targetRevision: "0.9.0"
+      helm:
+        releaseName: vault-secrets-operator
+    valuesPath: vault-secrets-operator/values/vault-secrets-operator-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+
+  secrets-config:
+    enabled: true
+    source:
+      path: charts/secrets-config
+      helm:
+        releaseName: secrets-config
+    valuesPath: secrets-config/values/secrets-config-values.yaml
+    syncOptions:
+      - CreateNamespace=true

@@ -1,19 +1,22 @@
 #!/bin/bash
-# ArgoCD static admin password: EasyDeploy2026
-# İstifadə: ./set-argocd-password.sh
-#          ./set-argocd-password.sh "MyPassword"
+# ArgoCD admin password — writes bcrypt hash to Vault, VSO syncs to K8s
+# Usage: ./set-argocd-password.sh <password> <vault-addr> <vault-token>
+#        ENV=prod ./set-argocd-password.sh <password> https://vault.example.com hvs.xxxxx
 
-PASSWORD="${1:-EasyDeploy2026}"
+set -euo pipefail
+
+PASSWORD="${1:?Usage: $0 <password> <vault-addr> <vault-token>}"
+VAULT_ADDR="${2:-${VAULT_ADDR:?Vault address required}}"
+VAULT_TOKEN="${3:-${VAULT_TOKEN:?Vault token required}}"
 ENVIRONMENT="${ENV:-dev}"
+
+export VAULT_ADDR VAULT_TOKEN
 
 if [ "$ENVIRONMENT" = "prod" ]; then
   ARGO_HOST="argocd.easysolution.work"
 else
   ARGO_HOST="argocd-${ENVIRONMENT}.easysolution.work"
 fi
-
-# Pre-generated bcrypt hash for EasyDeploy2026 (zero deps when using default)
-HASH_EASYDEPLOY='$2b$12$.ozrfe.uj.j29CDBY/lw/eMoFsA40jLYbX/FoJDEBG4IgNZh2gomW'
 
 get_hash() {
   if command -v argocd &> /dev/null; then
@@ -29,31 +32,24 @@ get_hash() {
   fi
 }
 
-# Bcrypt hash - default parol üçün hazır hash, custom üçün avtomatik generate
-if [ "$PASSWORD" = "EasyDeploy2026" ]; then
-  HASH="$HASH_EASYDEPLOY"
-else
+HASH=$(get_hash "$PASSWORD")
+if [ -z "$HASH" ]; then
+  (command -v pip3 &>/dev/null && pip3 install bcrypt -q 2>/dev/null) || (command -v pip &>/dev/null && pip install bcrypt -q 2>/dev/null)
   HASH=$(get_hash "$PASSWORD")
-  if [ -z "$HASH" ]; then
-    # python var amma bcrypt yoxdursa - pip install et və təkrar yoxla
-    (command -v pip3 &>/dev/null && pip3 install bcrypt -q 2>/dev/null) || (command -v pip &>/dev/null && pip install bcrypt -q 2>/dev/null)
-    HASH=$(get_hash "$PASSWORD")
-  fi
-  if [ -z "$HASH" ] || [ "${#HASH}" -lt 50 ]; then
-    echo "Bcrypt generate edilə bilmədi. argocd, docker və ya python lazımdır."
-    exit 1
-  fi
+fi
+if [ -z "$HASH" ] || [ "${#HASH}" -lt 50 ]; then
+  echo "Bcrypt generate edilə bilmədi. argocd, docker və ya python lazımdır."
+  exit 1
 fi
 
 MTime=$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u +%Y-%m-%dT%H:%M:%S)
-kubectl -n argocd patch secret argocd-secret --type merge -p "{\"stringData\":{\"admin.password\":\"$HASH\",\"admin.passwordMtime\":\"$MTime\"}}"
 
-# ArgoCD uses argocd-initial-admin-secret if it exists - our custom password is ignored!
-# Delete it so ArgoCD falls back to admin.password in argocd-secret.
+vault kv put "secret/${ENVIRONMENT}/argocd" \
+  "admin.password=${HASH}" \
+  "admin.passwordMtime=${MTime}"
+
 kubectl -n argocd delete secret argocd-initial-admin-secret --ignore-not-found=true
 
-# Restart server to pick up changes
-kubectl -n argocd rollout restart deployment argocd-server
-
-echo "Password updated: $PASSWORD"
-echo "Wait ~30s for argocd-server rollout, then login at https://$ARGO_HOST"
+echo "Password written to Vault (secret/${ENVIRONMENT}/argocd)"
+echo "VSO will sync to argocd-secret within refreshInterval"
+echo "Login at https://$ARGO_HOST"

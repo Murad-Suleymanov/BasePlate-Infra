@@ -1,0 +1,5 @@
+apiVersion: v2
+name: secrets-config
+description: ClusterSecretStore and ExternalSecret definitions for Vault integration
+type: application
+version: 0.1.0

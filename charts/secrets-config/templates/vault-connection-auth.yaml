@@ -1,0 +1,21 @@
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultConnection
+metadata:
+  name: vault-connection
+  namespace: vault-secrets-operator-system
+spec:
+  address: {{ .Values.vault.server | quote }}
+  skipTLSVerify: {{ .Values.vault.skipTLSVerify | default false }}
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: vault-auth
+  namespace: vault-secrets-operator-system
+spec:
+  method: kubernetes
+  mount: {{ .Values.vault.authPath }}
+  vaultConnectionRef: vault-connection
+  kubernetes:
+    role: {{ .Values.vault.role }}
+    serviceAccount: {{ .Values.vault.serviceAccount | default "vault-secrets-operator" }}
