@@ -1,0 +1,30 @@
+{{- $namespaces := dict }}
+{{- range $key, $secret := .Values.secrets }}
+{{- if $secret.enabled }}
+{{- $_ := set $namespaces $secret.namespace true }}
+{{- end }}
+{{- end }}
+{{- range $ns, $_ := $namespaces }}
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultConnection
+metadata:
+  name: vault-connection
+  namespace: {{ $ns }}
+spec:
+  address: {{ $.Values.vault.server | quote }}
+  skipTLSVerify: {{ $.Values.vault.skipTLSVerify | default false }}
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: vault-auth
+  namespace: {{ $ns }}
+spec:
+  method: kubernetes
+  mount: {{ $.Values.vault.authPath }}
+  vaultConnectionRef: vault-connection
+  kubernetes:
+    role: {{ $.Values.vault.role }}
+    serviceAccount: default
+{{- end }}

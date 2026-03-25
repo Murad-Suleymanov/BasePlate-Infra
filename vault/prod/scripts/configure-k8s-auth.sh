@@ -13,8 +13,6 @@ fi
 K8S_HOST="${3:?Usage: $0 <vault-addr> <prod|dev> <k8s-api-url>}"
 VAULT_TOKEN="${VAULT_TOKEN:?VAULT_TOKEN mütləq export olunmalıdır}"
 
-VSO_SA="vault-secrets-operator-controller-manager"
-
 vault_api() {
   local method="$1" path="$2" data="${3:-}"
   local http_code
@@ -33,6 +31,7 @@ vault_api() {
 
 echo "=== Configuring Kubernetes auth for ${ENV} ==="
 
+VSO_SA="vault-secrets-operator-controller-manager"
 SA_JWT=$(kubectl get secret vault-auth-token -n vault-secrets-operator-system -o jsonpath='{.data.token}' 2>/dev/null | base64 -d || \
          kubectl create token "$VSO_SA" -n vault-secrets-operator-system --duration=87600h)
 
@@ -59,8 +58,8 @@ EOJSON
 echo "=== Creating role for ${ENV} VSO ==="
 vault_api POST "auth/kubernetes-${ENV}/role/vault-secrets-operator" "$(cat <<EOJSON
 {
-  "bound_service_account_names": ["${VSO_SA}"],
-  "bound_service_account_namespaces": ["vault-secrets-operator-system"],
+  "bound_service_account_names": ["default"],
+  "bound_service_account_namespaces": ["*"],
   "policies": ["${ENV}-secrets"],
   "ttl": "1h"
 }
