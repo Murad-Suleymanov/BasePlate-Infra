@@ -219,6 +219,10 @@ applications:
         kind: MutatingWebhookConfiguration
         jqPathExpressions:
           - .webhooks[]?.failurePolicy
+      - group: admissionregistration.k8s.io
+        kind: ValidatingWebhookConfiguration
+        jqPathExpressions:
+          - .webhooks[]?.failurePolicy
 
   istio-config:
     enabled: true
