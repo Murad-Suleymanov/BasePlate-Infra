@@ -1,15 +1,15 @@
 ## ArgoCD — BasePlate-Infra
 
-**argocd/** bootstrap application-ları saxlayır. Hər mühit üçün ayrıca `application-root.yaml` var.
+The `argocd/` directory contains bootstrap application manifests. Each environment has its own `application-root.yaml`.
 
-### Fayllar
+### Files
 
-| Fayl | Məqsəd |
-|------|--------|
-| `prod/application-root.yaml` | root-infra (prod) — bütün infra Application-ları yaradır |
-| `dev/application-root.yaml` | root-infra (dev) — bütün infra Application-ları yaradır |
+| File | Purpose |
+|------|---------|
+| `prod/application-root.yaml` | root-infra (prod) — creates all infra Applications |
+| `dev/application-root.yaml` | root-infra (dev) — creates all infra Applications |
 
-### Arxitektura
+### Architecture
 
 ```
 application-root.yaml
@@ -30,12 +30,12 @@ application-root.yaml
             └─ secrets-config
 ```
 
-### İlk Quraşdırma
+### Initial Setup
 
-`root-infra` yeganə əl ilə yaradılan Application-dır. Qalanların hamısını o yaradır:
+`root-infra` is the only manually created Application. It creates all others:
 
 ```bash
 kubectl apply -f argocd/prod/application-root.yaml
 ```
 
-**Qeyd:** `root-infra` heç bir başqa Application tərəfindən idarə olunmur. Silinərsə avtomatik geri gəlmir — yenidən `kubectl apply` lazımdır.
+**Note:** `root-infra` is not managed by any other Application. If deleted, it will not be recreated automatically — you must re-apply it with `kubectl apply`.
