@@ -1,35 +1,41 @@
 ## ArgoCD — BasePlate-Infra
 
-**argocd/** yalnız ArgoCD-ə aid məsələləri saxlayır. Bütün Application tərifləri domain qovluqlarında saxlanılır.
+**argocd/** bootstrap application-ları saxlayır. Hər mühit üçün ayrıca `application-root.yaml` var.
 
-### argocd/ məzmunu
+### Fayllar
 
 | Fayl | Məqsəd |
 |------|--------|
-| `application-root.yaml` | root-infra — bütün `*-application.yaml` + argocd/ (özünü izləyir) |
-| `README.md` | Bu fayl |
+| `prod/application-root.yaml` | root-infra (prod) — bütün infra Application-ları yaradır |
+| `dev/application-root.yaml` | root-infra (dev) — bütün infra Application-ları yaradır |
 
-### Application tərifləri
+### Arxitektura
 
-| Qovluq | Application faylları |
-|--------|----------------------|
-| `{env}/gateway/apps/` | gateway-application.yaml, nginx-gateway-fabric-application.yaml |
-| `{env}/monitoring/apps/` | monitoring-application.yaml, kube-prometheus-stack-application.yaml, metrics-server-application.yaml |
-| `{env}/cert-manager/apps/` | cert-manager-application.yaml |
-| `{env}/dns/apps/` | external-dns-application.yaml |
-| `{env}/registry/apps/` | registry-application.yaml |
-| `{env}/argocd/apps/` | argocd-config-application.yaml, argocd-applicationsets-application.yaml |
-| `{env}/platform/apps/` | easy-deploy-platform-application.yaml |
+```
+application-root.yaml
+  └─ charts/infra-applications (Helm)
+       └─ {env}/infra-applications-values.yaml
+            ├─ argocd-config
+            ├─ argocd-applicationsets
+            ├─ easy-deploy-platform
+            ├─ cert-manager
+            ├─ external-dns
+            ├─ nginx-gateway-fabric
+            ├─ kube-prometheus-stack
+            ├─ metrics-server
+            ├─ gateway-config
+            ├─ monitoring-config
+            ├─ registry
+            ├─ vault-secrets-operator
+            └─ secrets-config
+```
 
 ### İlk Quraşdırma
 
-```bash
-# 1. CRD-ləri quraşdır (bir dəfəlik)
-bash install-gateway-api-crds.sh
-bash install-kube-prometheus-crds.sh
+`root-infra` yeganə əl ilə yaradılan Application-dır. Qalanların hamısını o yaradır:
 
-# 2. Root apply et
-kubectl apply -f argocd/application-root.yaml
+```bash
+kubectl apply -f argocd/prod/application-root.yaml
 ```
 
-**root-infra** tək root — gateway, monitoring, cert-manager, dns, registry, argocd-config, platform (hamısı)
+**Qeyd:** `root-infra` heç bir başqa Application tərəfindən idarə olunmur. Silinərsə avtomatik geri gəlmir — yenidən `kubectl apply` lazımdır.
