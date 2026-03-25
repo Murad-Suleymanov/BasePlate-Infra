@@ -50,3 +50,19 @@ route:
 clientSettings:
   maxSize: "0"
   timeout: "300s"
+
+gc:
+  enabled: true
+  schedule: "0 3 * * 0"
+  deleteUntagged: true
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  ttlSecondsAfterFinished: 86400
+  # nodeSelector: {}
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi

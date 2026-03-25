@@ -37,3 +37,8 @@ route:
 clientSettings:
   maxSize: "0"
   timeout: "300s"
+
+gc:
+  enabled: true
+  schedule: "0 3 * * 0"
+  deleteUntagged: true
