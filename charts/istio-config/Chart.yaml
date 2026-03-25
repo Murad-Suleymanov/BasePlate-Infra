@@ -1,0 +1,5 @@
+apiVersion: v2
+name: istio-config
+description: Istio mesh configuration - namespace labels, PeerAuthentication, Telemetry, routes
+version: 1.0.0
+type: application

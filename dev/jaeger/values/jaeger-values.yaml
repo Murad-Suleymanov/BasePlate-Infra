@@ -1,0 +1,23 @@
+replicas: 1
+
+config:
+  extensions:
+    jaeger_storage:
+      backends:
+        memory_store:
+          memory:
+            max_traces: 50000
+  service:
+    extensions: [jaeger_storage]
+    pipelines:
+      traces:
+        receivers: [otlp, jaeger]
+        exporters: [jaeger_storage_exporter]
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

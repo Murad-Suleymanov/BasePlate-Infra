@@ -1,0 +1,22 @@
+targetIP: ""
+kialiHostname: ""
+jaegerHostname: ""
+
+gateway:
+  name: main-gateway
+  namespace: nginx-gateway
+
+injectedNamespaces:
+  - easy-deploy-system
+
+meshConfig:
+  mtlsMode: STRICT
+
+tracing:
+  enabled: true
+  samplingRate: 100
+
+route:
+  sections:
+    - http
+    - https

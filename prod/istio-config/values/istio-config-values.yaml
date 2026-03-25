@@ -1,0 +1,20 @@
+targetIP: "116.203.203.121"
+kialiHostname: kiali.easysolution.work
+jaegerHostname: jaeger.easysolution.work
+
+gateway:
+  name: main-gateway
+  namespace: nginx-gateway
+
+injectedNamespaces:
+  - easy-deploy-system
+
+meshConfig:
+  mtlsMode: STRICT
+
+tracing:
+  enabled: true
+  samplingRate: 10
+
+route:
+  sections: [http, https]

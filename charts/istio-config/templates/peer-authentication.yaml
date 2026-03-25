@@ -1,0 +1,20 @@
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: istio-system
+spec:
+  mtls:
+    mode: PERMISSIVE
+---
+{{- range .Values.injectedNamespaces }}
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: {{ . }}
+spec:
+  mtls:
+    mode: {{ $.Values.meshConfig.mtlsMode }}
+---
+{{- end }}

@@ -186,3 +186,69 @@ applications:
     valuesPath: secrets-config/values/secrets-config-values.yaml
     syncOptions:
       - CreateNamespace=true
+
+  istio-base:
+    enabled: true
+    destinationNamespace: istio-system
+    source:
+      repoURL: https://istio-release.storage.googleapis.com/charts
+      chart: base
+      targetRevision: "1.29.1"
+      helm:
+        releaseName: istio-base
+    valuesPath: istio-base/values/istio-base-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+
+  istiod:
+    enabled: true
+    destinationNamespace: istio-system
+    source:
+      repoURL: https://istio-release.storage.googleapis.com/charts
+      chart: istiod
+      targetRevision: "1.29.1"
+      helm:
+        releaseName: istiod
+    valuesPath: istiod/values/istiod-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+
+  istio-config:
+    enabled: true
+    destinationNamespace: istio-system
+    source:
+      path: charts/istio-config
+      helm:
+        releaseName: istio-config
+    valuesPath: istio-config/values/istio-config-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+
+  kiali-server:
+    enabled: true
+    destinationNamespace: istio-system
+    source:
+      repoURL: https://kiali.org/helm-charts
+      chart: kiali-server
+      targetRevision: "2.21.0"
+      helm:
+        releaseName: kiali
+    valuesPath: kiali/values/kiali-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+
+  jaeger:
+    enabled: true
+    destinationNamespace: istio-system
+    source:
+      repoURL: https://jaegertracing.github.io/helm-charts
+      chart: jaeger
+      targetRevision: "4.6.0"
+      helm:
+        releaseName: jaeger
+    valuesPath: jaeger/values/jaeger-values.yaml
+    syncOptions:
+      - CreateNamespace=true

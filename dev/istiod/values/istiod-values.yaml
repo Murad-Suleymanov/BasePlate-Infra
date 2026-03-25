@@ -1,0 +1,29 @@
+pilot:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  traceSampling: 100.0
+
+meshConfig:
+  accessLogFile: /dev/stdout
+  enableTracing: true
+  defaultConfig:
+    tracing:
+      zipkin:
+        address: jaeger-collector.istio-system:9411
+      sampling: 100.0
+    holdApplicationUntilProxyStarts: true
+
+global:
+  proxy:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
