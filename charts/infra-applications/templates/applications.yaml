@@ -47,5 +47,9 @@ spec:
       - {{ . }}
 {{- end }}
 {{- end }}
+{{- if $app.ignoreDifferences }}
+  ignoreDifferences:
+{{- toYaml $app.ignoreDifferences | nindent 4 }}
+{{- end }}
 {{- end }}
 {{- end }}
