@@ -1,9 +1,0 @@
-{{- range .Values.injectedNamespaces }}
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: {{ . }}
-  labels:
-    istio-injection: enabled
-{{- end }}
