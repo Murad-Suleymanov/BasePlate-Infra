@@ -1,11 +1,17 @@
 #!/bin/bash
 set -euo pipefail
 
-VAULT_ADDR="${VAULT_ADDR:-https://vault.easysolution.work}"
-ENV="${1:?Usage: $0 <prod|dev>}"
-K8S_HOST="${2:?Usage: $0 <prod|dev> <k8s-api-url>}"
-
+VAULT_ADDR="${1:?Usage: $0 <vault-addr> <prod|dev> <k8s-api-url>}"
+[[ "$VAULT_ADDR" != https://* && "$VAULT_ADDR" != http://* ]] && VAULT_ADDR="https://${VAULT_ADDR}"
 export VAULT_ADDR
+
+ENV="${2:?Usage: $0 <vault-addr> <prod|dev> <k8s-api-url>}"
+if [[ "$ENV" != "prod" && "$ENV" != "dev" ]]; then
+  echo "Error: ENV must be 'prod' or 'dev', got '${ENV}'"
+  exit 1
+fi
+
+K8S_HOST="${3:?Usage: $0 <vault-addr> <prod|dev> <k8s-api-url>}"
 
 echo "=== Configuring Kubernetes auth for ${ENV} ==="
 

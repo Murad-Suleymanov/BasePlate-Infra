@@ -120,17 +120,34 @@ kubectl patch storageclass local-path -p '{"metadata":{"annotations":{"storagecl
 kubectl get sc
 ```
 
-## 9) Secrets management with Vault
+## 9) Secrets management
 
-All secrets are managed through HashiCorp Vault and synced to Kubernetes via Vault Secrets Operator (VSO).
+All application secrets must exist in the cluster before workloads start.
+Two approaches are supported: **Option A** (Vault + VSO, recommended) and **Option B** (manual `kubectl`).
 
-### Architecture
+### Secret inventory
 
-A single Vault server (`vault.easysolution.work`) serves both prod and dev clusters.
+| Secret name | Namespace | Keys | Consumer |
+|---|---|---|---|
+| `grafana-admin-secret` | `monitoring` | `admin-user`, `admin-password` | Grafana (kube-prometheus-stack) |
+| `cloudflare-api-token` | `cert-manager` | `cloudflare_api_token` | cert-manager ClusterIssuer |
+| `cloudflare-api-token` | `external-dns` | `cloudflare_api_token` | external-dns |
+| `github-pipeline-secret` | `easy-deploy-system` | `GITHUB_TOKEN`, `REGISTRY_USERNAME`, `REGISTRY_PASSWORD` | easy-deploy-operator |
+| `registry-auth` | `registry` | `htpasswd` | Docker registry |
+| `argocd-secret` | `argocd` | `admin.password`, `admin.passwordMtime` | ArgoCD (merge into existing) |
+
+Additionally, `wildcard-tls`, `letsencrypt-account-key`, and `letsencrypt-staging-account-key` are auto-managed by cert-manager and do not require manual creation.
+
+---
+
+### Option A: Vault + VSO (recommended)
+
+A single external Vault server serves both prod and dev clusters.
 Secret paths are separated by environment prefix: `secret/prod/*` and `secret/dev/*`.
 Each cluster authenticates via its own Kubernetes auth method (`kubernetes-prod` / `kubernetes-dev`).
+Vault Secrets Operator (VSO) runs in each cluster and syncs secrets automatically.
 
-### 9a) Vault server setup
+#### A1) Vault server setup
 
 On the Vault server:
 
@@ -140,71 +157,75 @@ cd ~/BasePlate-Infra/vault/prod
 # Install Vault binary + systemd service
 bash scripts/install-vault.sh
 
-# Place TLS certificates
+# Place TLS certificates (e.g. from certbot)
+sudo mkdir -p /etc/vault.d/tls
 sudo cp /path/to/fullchain.pem /etc/vault.d/tls/
 sudo cp /path/to/privkey.pem /etc/vault.d/tls/
 sudo chown vault:vault /etc/vault.d/tls/*
 
 # Start Vault
-sudo systemctl start vault
+sudo systemctl enable --now vault
+```
 
-# Initialize and configure
-export VAULT_ADDR=https://vault.easysolution.work
-bash scripts/init-vault.sh
+#### A2) Initialize Vault and create secret paths
+
+```bash
+# First time (Vault not yet initialized):
+bash scripts/init-vault.sh <VAULT_ADDR>
+
+# Already initialized (e.g. via UI):
+bash scripts/init-vault.sh <VAULT_ADDR> <ROOT_TOKEN>
 ```
 
 **Save the unseal keys and root token securely. They cannot be recovered.**
 
-After init, populate the actual secret values:
+#### A3) Populate real secret values
+
+Replace placeholder values for each environment:
 
 ```bash
-vault kv put secret/prod/monitoring/grafana \
+export VAULT_ADDR=<VAULT_ADDR>
+export VAULT_TOKEN=<ROOT_TOKEN>
+
+# Repeat for ENV=prod and ENV=dev
+ENV=prod
+
+vault kv put secret/${ENV}/monitoring/grafana \
   admin-user=admin \
   admin-password='<GRAFANA_PASSWORD>'
 
-vault kv put secret/prod/cloudflare \
+vault kv put secret/${ENV}/cloudflare \
   cloudflare_api_token='<CLOUDFLARE_TOKEN>'
 
-vault kv put secret/prod/github \
-  GITHUB_TOKEN='<GITHUB_TOKEN>'
+vault kv put secret/${ENV}/github \
+  GITHUB_TOKEN='<GITHUB_TOKEN>' \
+  REGISTRY_USERNAME='<REGISTRY_USERNAME>' \
+  REGISTRY_PASSWORD='<REGISTRY_PASSWORD>'
 
-vault kv put secret/prod/registry \
+vault kv put secret/${ENV}/registry \
   htpasswd='<HTPASSWD_STRING>'
 ```
 
-Configure Kubernetes auth for each cluster:
+ArgoCD password requires a bcrypt hash (use the helper script after ArgoCD is running — see step 10).
+
+#### A4) Configure Kubernetes authentication
+
+Run from a machine with `kubectl` access to the target cluster and `vault` CLI authenticated:
 
 ```bash
-# For prod cluster (run with kubectl pointing to prod)
+export VAULT_ADDR=<VAULT_ADDR>
+export VAULT_TOKEN=<ROOT_TOKEN>
+
+# For prod cluster (kubectl pointing to prod)
 bash scripts/configure-k8s-auth.sh prod https://<PROD_K8S_API>:6443
 
-# For dev cluster (run with kubectl pointing to dev)
+# For dev cluster (kubectl pointing to dev)
 bash scripts/configure-k8s-auth.sh dev https://<DEV_K8S_API>:6443
 ```
 
-### 9b) Add dev secrets to Vault
+#### A5) Verify VSO sync
 
-Dev secrets live in the same Vault under `secret/dev/*`:
-
-```bash
-vault kv put secret/dev/monitoring/grafana \
-  admin-user=admin \
-  admin-password='<GRAFANA_PASSWORD>'
-
-vault kv put secret/dev/cloudflare \
-  cloudflare_api_token='<CLOUDFLARE_TOKEN>'
-
-vault kv put secret/dev/github \
-  GITHUB_TOKEN='<GITHUB_TOKEN>'
-
-vault kv put secret/dev/registry \
-  htpasswd='<HTPASSWD_STRING>'
-```
-
-The `configure-k8s-auth.sh` script in step 9a already configures auth for both clusters.
-### 9c) Verify ESO sync
-
-After Vault is configured and ArgoCD syncs `vault-secrets-operator` + `secrets-config`:
+After ArgoCD syncs `vault-secrets-operator` + `secrets-config`:
 
 ```bash
 kubectl get vaultstaticsecrets -A
@@ -212,12 +233,62 @@ kubectl get vaultconnection -n vault-secrets-operator-system
 kubectl get vaultauth -n vault-secrets-operator-system
 ```
 
-All VaultStaticSecrets should show `SecretSynced` status. The following Kubernetes Secrets are automatically created/updated:
-- `grafana-admin-secret` in `monitoring`
-- `cloudflare-api-token` in `cert-manager` and `external-dns`
-- `github-pipeline-secret` in `easy-deploy-system`
-- `registry-auth` in `registry`
-- `argocd-secret` in `argocd` (merged into existing secret — only `admin.password` and `admin.passwordMtime` keys)
+All VaultStaticSecrets should show `SecretSynced` status.
+
+---
+
+### Option B: Without Vault (manual secrets)
+
+If Vault is not available, disable `vault-secrets-operator` and `secrets-config` in the environment values override for `infra-applications`:
+
+```yaml
+vault-secrets-operator:
+  enabled: false
+secrets-config:
+  enabled: false
+```
+
+Then create all secrets manually with `kubectl`:
+
+```bash
+export ENV=dev  # or prod
+
+# Grafana
+kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+kubectl create secret generic grafana-admin-secret -n monitoring \
+  --from-literal=admin-user=admin \
+  --from-literal=admin-password='<GRAFANA_PASSWORD>' \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+# Cloudflare (needed in two namespaces)
+kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f -
+kubectl create secret generic cloudflare-api-token -n cert-manager \
+  --from-literal=cloudflare_api_token='<CLOUDFLARE_TOKEN>' \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl create namespace external-dns --dry-run=client -o yaml | kubectl apply -f -
+kubectl create secret generic cloudflare-api-token -n external-dns \
+  --from-literal=cloudflare_api_token='<CLOUDFLARE_TOKEN>' \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+# GitHub pipeline
+kubectl create namespace easy-deploy-system --dry-run=client -o yaml | kubectl apply -f -
+kubectl create secret generic github-pipeline-secret -n easy-deploy-system \
+  --from-literal=GITHUB_TOKEN='<GITHUB_TOKEN>' \
+  --from-literal=REGISTRY_USERNAME='<REGISTRY_USERNAME>' \
+  --from-literal=REGISTRY_PASSWORD='<REGISTRY_PASSWORD>' \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+# Registry
+kubectl create namespace registry --dry-run=client -o yaml | kubectl apply -f -
+kubectl create secret generic registry-auth -n registry \
+  --from-literal=htpasswd='<HTPASSWD_STRING>' \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+> **Note:** With Option B, secret rotation requires manual `kubectl` commands. There is no automatic sync.
+
+---
 
 ## 10) Sync order (mandatory)
 
@@ -231,52 +302,67 @@ cd ~/BasePlate
 kubectl apply -f argocd/${ENV}/application-root.yaml
 ```
 
-### ArgoCD password (managed by Vault)
+### ArgoCD admin password
 
-ArgoCD admin password is stored as a bcrypt hash in Vault and synced via VSO.  
-The `set-argocd-password.sh` script hashes the password and writes it to Vault.
+ArgoCD requires a bcrypt-hashed password. Use the appropriate method depending on your secrets approach.
+
+**With Vault (Option A):**
+
+The `set-argocd-password.sh` script hashes the password and writes it to Vault. VSO syncs the hash to `argocd-secret`.
 
 ```bash
-# Default password (EasyDeploy2026) for dev
 cd ~/BasePlate-Infra/scripts
-ENV=dev bash set-argocd-password.sh
 
-# Custom password for prod
-ENV=prod bash set-argocd-password.sh 'MyStrongPassword123!'
+# Provide password, Vault address, and Vault token
+ENV=dev  bash set-argocd-password.sh '<PASSWORD>' <VAULT_ADDR> <VAULT_TOKEN>
+ENV=prod bash set-argocd-password.sh '<PASSWORD>' <VAULT_ADDR> <VAULT_TOKEN>
 ```
 
-After running the script, VSO will sync the hash to `argocd-secret` in the cluster.  
-To force immediate sync:
+VSO will sync within `refreshInterval` (default 1h). To force immediate pickup, delete the auto-generated initial secret:
 
 ```bash
 kubectl -n argocd delete secret argocd-initial-admin-secret --ignore-not-found
 ```
 
-To rotate the password later, simply re-run the script with a new password.
+**Without Vault (Option B):**
 
-### Grafana password (managed by Vault)
+Use the PowerShell script (Windows) or patch the secret directly:
 
-Grafana admin credentials are synced from Vault via VSO. No manual secret creation needed.
-
-To rotate the password, update it in Vault:
+```powershell
+cd .\BasePlate-Infra\scripts
+.\set-argocd-password.ps1 "<PASSWORD>" "<ENVIRONMENT>"
+```
 
 ```bash
-# Prod (from Vault server)
-vault kv put secret/prod/monitoring/grafana \
-  admin-user=admin \
-  admin-password='<NEW_PASSWORD>'
+# Or on Linux with argocd/docker/python available:
+HASH=$(argocd account bcrypt --password '<PASSWORD>')
+MTIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+kubectl -n argocd patch secret argocd-secret --type merge \
+  -p "{\"stringData\":{\"admin.password\":\"$HASH\",\"admin.passwordMtime\":\"$MTIME\"}}"
+kubectl -n argocd delete secret argocd-initial-admin-secret --ignore-not-found
+kubectl -n argocd rollout restart deployment argocd-server
+```
 
-# Dev
-vault kv put secret/dev/monitoring/grafana \
+### Grafana password rotation
+
+**With Vault:** update the value in Vault; VSO syncs automatically.
+
+```bash
+export VAULT_ADDR=<VAULT_ADDR>
+export VAULT_TOKEN=<ROOT_TOKEN>
+
+vault kv put secret/${ENV}/monitoring/grafana \
   admin-user=admin \
   admin-password='<NEW_PASSWORD>'
 ```
 
-ESO will sync the updated secret automatically (within `refreshInterval`, default 1h).
-To force immediate sync:
+**Without Vault:** recreate the secret and restart Grafana.
 
 ```bash
-kubectl -n monitoring delete secret grafana-admin-secret
+kubectl -n monitoring create secret generic grafana-admin-secret \
+  --from-literal=admin-user=admin \
+  --from-literal=admin-password='<NEW_PASSWORD>' \
+  --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n monitoring rollout restart deploy/monitoring-grafana
 ```
 
@@ -304,7 +390,7 @@ dig TXT _acme-challenge.easysolution.work @8.8.8.8 +short
 - `no matches for kind "ApplicationSet"` -> apply `applicationset-crd.yaml` with server-side apply.
 - `metadata.annotations: Too long` -> use server-side apply for CRDs (not client-side).
 - `no matches for kind "HTTPRoute"` -> run `install-gateway-api-crds.sh`.
-- `cloudflare-api-token not found` -> create the secret in `cert-manager` namespace too.
+- `cloudflare-api-token not found` -> check secret exists in both `cert-manager` and `external-dns` namespaces (see section 9).
 - Grafana `Pending` + PVC `local-path` -> install `local-path-provisioner`.
 - `Error scraping target ... :9091 ... connection refused` (Calico) -> enable Felix metrics:
 
