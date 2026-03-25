@@ -15,8 +15,10 @@ K8S_HOST="${3:?Usage: $0 <vault-addr> <prod|dev> <k8s-api-url>}"
 
 echo "=== Configuring Kubernetes auth for ${ENV} ==="
 
+VSO_SA="vault-secrets-operator-controller-manager"
+
 SA_JWT=$(kubectl get secret vault-auth-token -n vault-secrets-operator-system -o jsonpath='{.data.token}' 2>/dev/null | base64 -d || \
-         kubectl create token vault-secrets-operator -n vault-secrets-operator-system --duration=87600h)
+         kubectl create token "$VSO_SA" -n vault-secrets-operator-system --duration=87600h)
 
 K8S_CA=$(kubectl config view --raw --minify --flatten -o jsonpath='{.clusters[0].cluster.certificate-authority-data}' | base64 -d)
 
@@ -34,7 +36,7 @@ EOF
 
 echo "=== Creating role for ${ENV} VSO ==="
 vault write auth/kubernetes-${ENV}/role/vault-secrets-operator \
-  bound_service_account_names=vault-secrets-operator \
+  bound_service_account_names="$VSO_SA" \
   bound_service_account_namespaces=vault-secrets-operator-system \
   policies=${ENV}-secrets \
   ttl=1h
