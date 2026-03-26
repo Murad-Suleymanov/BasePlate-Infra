@@ -680,7 +680,7 @@ The `monitoring-config` chart includes ServiceMonitor/PodMonitor resources for I
 |--------|--------------|-----------|------|------|
 | **Istiod** | ServiceMonitor | istio-system | `http-monitoring` (15014) | `/metrics` |
 | **Envoy sidecars** | PodMonitor | all injected namespaces | `http-envoy-prom` (15090) | `/stats/prometheus` |
-| **Kiali** | ServiceMonitor | istio-system | `http` (20001) | `/metrics` |
+| **Kiali** | ServiceMonitor | istio-system | `http-metrics` (9090) | `/metrics` |
 | **Jaeger** | ServiceMonitor | istio-system | `metrics` (14269) | `/metrics` |
 
 These are enabled via `monitoring-config` values:

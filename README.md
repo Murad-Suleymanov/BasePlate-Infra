@@ -434,7 +434,7 @@ The `monitoring-config` chart deploys the following scrape targets:
 | Calico Felix | ServiceMonitor + headless Service | :9091/metrics | kube-system |
 | Istiod | ServiceMonitor | :15014/metrics | istio-system |
 | Envoy sidecars | PodMonitor | :15090/stats/prometheus | all injected namespaces |
-| Kiali | ServiceMonitor | :20001/metrics | istio-system |
+| Kiali | ServiceMonitor | :9090/metrics | istio-system |
 | Jaeger | ServiceMonitor | :14269/metrics | istio-system |
 
 See [Monitoring Components](docs/monitoring-components.md) for the full matrix of all components.

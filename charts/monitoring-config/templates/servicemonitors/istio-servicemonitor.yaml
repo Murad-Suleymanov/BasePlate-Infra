@@ -54,7 +54,7 @@ spec:
   namespaceSelector:
     matchNames: [istio-system]
   endpoints:
-    - port: http
+    - port: http-metrics
       path: /metrics
       interval: {{ .Values.scrapeInterval }}
 {{- end }}
