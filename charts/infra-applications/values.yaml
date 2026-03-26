@@ -47,11 +47,7 @@ applications:
         releaseName: easy-deploy-platform
     valuesPath: platform/values/easy-deploy-platform-values.yaml
     syncOptions:
-      - CreateNamespace=true
       - ServerSideApply=true
-    managedNamespaceMetadata:
-      labels:
-        istio-injection: enabled
 
   monitoring-config:
     enabled: true
