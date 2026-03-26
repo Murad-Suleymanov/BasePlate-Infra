@@ -76,8 +76,8 @@ server {
     listen 443 ssl;
     server_name vault.easysolution.work;
 
-    ssl_certificate     /etc/vault.d/tls/fullchain.pem;
-    ssl_certificate_key /etc/vault.d/tls/privkey.pem;
+    ssl_certificate     /etc/ssl/easysolution/fullchain.pem;
+    ssl_certificate_key /etc/ssl/easysolution/privkey.pem;
     ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_ciphers         HIGH:!aNULL:!MD5;
 
@@ -111,7 +111,7 @@ echo ""
 echo "=== Vault quraşdırıldı ==="
 echo ""
 echo "Növbəti addımlar:"
-echo "  1. TLS sertifikat qoy: /etc/vault.d/tls/fullchain.pem + privkey.pem"
+echo "  1. TLS sertifikat qoy: /etc/ssl/easysolution/fullchain.pem + privkey.pem"
 echo "  2. systemctl start vault"
 echo "  3. systemctl start nginx"
 echo "  4. export VAULT_ADDR=https://${VAULT_HOSTNAME}"

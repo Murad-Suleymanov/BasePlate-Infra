@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+# Usage: bash configure-k8s-auth.sh <vault-addr> <prod|dev> <k8s-api-url>
+# Run on the K8s master node (needs kubectl access).
+
 VAULT_ADDR="${1:?Usage: $0 <vault-addr> <prod|dev> <k8s-api-url>}"
 [[ "$VAULT_ADDR" != https://* && "$VAULT_ADDR" != http://* ]] && VAULT_ADDR="https://${VAULT_ADDR}"
 
@@ -31,9 +34,15 @@ vault_api() {
 
 echo "=== Configuring Kubernetes auth for ${ENV} ==="
 
-VSO_SA="vault-secrets-operator-controller-manager"
-SA_JWT=$(kubectl get secret vault-auth-token -n vault-secrets-operator-system -o jsonpath='{.data.token}' 2>/dev/null | base64 -d || \
-         kubectl create token "$VSO_SA" -n vault-secrets-operator-system --duration=87600h)
+echo "--- Reading vault-auth-token from K8s..."
+SA_JWT=$(kubectl get secret vault-auth-token -n vault-secrets-operator-system \
+  -o jsonpath='{.data.token}' | base64 -d)
+
+if [ -z "$SA_JWT" ]; then
+  echo "ERROR: vault-auth-token secret tapılmadı və ya boşdur."
+  echo "       ArgoCD secrets-config chart-ı sync etməlidir (vault-auth-token.yaml)."
+  exit 1
+fi
 
 K8S_CA=$(kubectl config view --raw --minify --flatten -o jsonpath='{.clusters[0].cluster.certificate-authority-data}' | base64 -d)
 
@@ -50,7 +59,7 @@ EOJSON
 echo "=== Creating policy for ${ENV} ==="
 vault_api PUT "sys/policies/acl/${ENV}-secrets" "$(cat <<EOJSON
 {
-  "policy": "path \"secret/data/${ENV}/*\" {\n  capabilities = [\"read\"]\n}"
+  "policy": "path \"secret/data/${ENV}/*\" {\n  capabilities = [\"read\"]\n}\npath \"secret/data/istio/*\" {\n  capabilities = [\"read\"]\n}"
 }
 EOJSON
 )"
@@ -66,4 +75,7 @@ vault_api POST "auth/kubernetes-${ENV}/role/vault-secrets-operator" "$(cat <<EOJ
 EOJSON
 )"
 
-echo "=== Done. VSO in ${ENV} cluster can now read secret/${ENV}/* ==="
+echo ""
+echo "=== Done ==="
+echo "VSO ${ENV} cluster-dən secret/${ENV}/* və secret/istio/* oxuya bilər."
+echo "Token: long-lived (vault-auth-token Secret, expire olmur)"

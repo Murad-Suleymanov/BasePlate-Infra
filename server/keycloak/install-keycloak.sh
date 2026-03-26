@@ -76,8 +76,8 @@ server {
     listen 443 ssl;
     server_name keycloak.easysolution.work;
 
-    ssl_certificate     /etc/vault.d/tls/fullchain.pem;
-    ssl_certificate_key /etc/vault.d/tls/privkey.pem;
+    ssl_certificate     /etc/ssl/easysolution/fullchain.pem;
+    ssl_certificate_key /etc/ssl/easysolution/privkey.pem;
     ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_ciphers         HIGH:!aNULL:!MD5;
 

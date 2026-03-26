@@ -12,7 +12,6 @@ ADMIN_PASSWORD="${2:?Usage: $0 <keycloak-public-hostname> <admin-password> <kial
 KIALI_HOSTNAME="${3:?Usage: $0 <keycloak-public-hostname> <admin-password> <kiali-hostname> <jaeger-hostname>}"
 JAEGER_HOSTNAME="${4:?Usage: $0 <keycloak-public-hostname> <admin-password> <kiali-hostname> <jaeger-hostname>}"
 
-# API calls go to localhost (HTTP), public URL used only in redirect URIs
 KEYCLOAK_API="http://localhost:8080"
 
 REALM="istio"
