@@ -257,8 +257,7 @@ applications:
       - CreateNamespace=true
       - RespectIgnoreDifferences=true
     ignoreDifferences:
-      - group: ""
-        kind: ConfigMap
+      - kind: ConfigMap
         name: kiali
         jsonPointers:
           - /data
