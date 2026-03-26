@@ -435,7 +435,7 @@ The `monitoring-config` chart deploys the following scrape targets:
 | Istiod | ServiceMonitor | :15014/metrics | istio-system |
 | Envoy sidecars | PodMonitor | :15090/stats/prometheus | all injected namespaces |
 | Kiali | ServiceMonitor | :9090/metrics | istio-system |
-| Jaeger | ServiceMonitor | :14269/metrics | istio-system |
+| Jaeger | ServiceMonitor | :8888/metrics | istio-system |
 
 See [Monitoring Components](docs/monitoring-components.md) for the full matrix of all components.
 

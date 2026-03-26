@@ -74,7 +74,7 @@ spec:
   namespaceSelector:
     matchNames: [istio-system]
   endpoints:
-    - port: metrics
+    - port: internal-metrics
       path: /metrics
       interval: {{ .Values.scrapeInterval }}
 {{- end }}
