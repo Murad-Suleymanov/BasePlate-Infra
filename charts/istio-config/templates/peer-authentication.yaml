@@ -16,12 +16,22 @@ metadata:
 spec:
   mtls:
     mode: {{ $.Values.meshConfig.mtlsMode }}
-{{- if $.Values.meshConfig.permissivePorts }}
+---
+{{- end }}
+{{- range .Values.meshConfig.metricsExceptions }}
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: allow-metrics-{{ .name }}
+  namespace: {{ .namespace }}
+spec:
+  selector:
+    matchLabels:
+      {{- toYaml .selector | nindent 6 }}
   portLevelMtls:
-{{- range $.Values.meshConfig.permissivePorts }}
+{{- range .ports }}
     {{ . }}:
       mode: PERMISSIVE
-{{- end }}
 {{- end }}
 ---
 {{- end }}

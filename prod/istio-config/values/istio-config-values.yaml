@@ -11,9 +11,14 @@ injectedNamespaces:
 
 meshConfig:
   mtlsMode: STRICT
-  permissivePorts:
-    - 8080
-    - 8081
+  metricsExceptions:
+    - name: easy-deploy-operator
+      namespace: easy-deploy-system
+      selector:
+        app.kubernetes.io/name: easy-deploy-operator
+      ports:
+        - 8080
+        - 8081
 
 tracing:
   enabled: true
