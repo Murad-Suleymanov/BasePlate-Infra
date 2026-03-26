@@ -31,6 +31,7 @@ spec:
             - --cookie-name=_jaeger_oauth2
             - --skip-provider-button=true
             - --code-challenge-method=S256
+            - --insecure-oidc-skip-email-verification=true
           env:
             - name: OAUTH2_PROXY_CLIENT_SECRET
               valueFrom:
