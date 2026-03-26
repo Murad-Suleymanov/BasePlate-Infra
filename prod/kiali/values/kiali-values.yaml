@@ -7,6 +7,7 @@ auth:
     issuer_uri: https://keycloak.easysolution.work/realms/istio
     scopes: [openid, profile, email]
     username_claim: preferred_username
+    api_token: id_token
 
 deployment:
   resources:
