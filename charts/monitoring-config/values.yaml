@@ -68,6 +68,14 @@ serviceMonitors:
     enabled: true
   calico:
     enabled: true
+  istiod:
+    enabled: true
+  envoy:
+    enabled: true
+  kiali:
+    enabled: true
+  jaeger:
+    enabled: true
 
 # extraServiceMonitors:
 #   - name: my-app

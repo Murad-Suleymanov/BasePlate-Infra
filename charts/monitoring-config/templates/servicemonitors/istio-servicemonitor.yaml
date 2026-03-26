@@ -1,0 +1,80 @@
+{{- if .Values.serviceMonitors.istiod.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: istiod
+  namespace: istio-system
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: istiod
+  namespaceSelector:
+    matchNames: [istio-system]
+  endpoints:
+    - port: http-monitoring
+      path: /metrics
+      interval: {{ .Values.scrapeInterval }}
+{{- end }}
+---
+{{- if .Values.serviceMonitors.envoy.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: envoy-sidecar
+  namespace: istio-system
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchExpressions:
+      - key: security.istio.io/tlsMode
+        operator: Exists
+  namespaceSelector:
+    any: true
+  podMetricsEndpoints:
+    - port: http-envoy-prom
+      path: /stats/prometheus
+      interval: {{ .Values.scrapeInterval }}
+{{- end }}
+---
+{{- if .Values.serviceMonitors.kiali.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kiali
+  namespace: istio-system
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kiali
+  namespaceSelector:
+    matchNames: [istio-system]
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.scrapeInterval }}
+{{- end }}
+---
+{{- if .Values.serviceMonitors.jaeger.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: jaeger
+  namespace: istio-system
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: jaeger
+  namespaceSelector:
+    matchNames: [istio-system]
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: {{ .Values.scrapeInterval }}
+{{- end }}

@@ -90,15 +90,15 @@ else
 fi
 
 create_client() {
-  local client_id="$1" redirect_uri="$2" description="$3"
-  echo "--- Creating client: ${client_id}"
+  local client_id="$1" redirect_uri="$2" description="$3" is_public="${4:-false}"
+  echo "--- Creating client: ${client_id} (publicClient=${is_public})"
 
   STATUS=$(kc_api POST "/${REALM}/clients" "{
     \"clientId\": \"${client_id}\",
     \"enabled\": true,
     \"description\": \"${description}\",
     \"protocol\": \"openid-connect\",
-    \"publicClient\": false,
+    \"publicClient\": ${is_public},
     \"standardFlowEnabled\": true,
     \"directAccessGrantsEnabled\": false,
     \"redirectUris\": [\"${redirect_uri}\"],
@@ -136,14 +136,15 @@ print(data.get('value', 'N/A'))
   export "SECRET_${client_id//-/_}=${client_secret}"
 }
 
-create_client "kiali" "https://${KIALI_HOSTNAME}/*" "Kiali Service Mesh Dashboard"
-create_client "jaeger-proxy" "https://${JAEGER_HOSTNAME}/oauth2/callback" "OAuth2 Proxy for Jaeger"
+create_client "kiali" "https://${KIALI_HOSTNAME}/*" "Kiali Service Mesh Dashboard" true
+create_client "jaeger-proxy" "https://${JAEGER_HOSTNAME}/oauth2/callback" "OAuth2 Proxy for Jaeger" false
 
 echo "--- Creating user: viewer"
 STATUS=$(kc_api POST "/${REALM}/users" "{
   \"username\": \"viewer\",
   \"enabled\": true,
   \"email\": \"viewer@easysolution.work\",
+  \"emailVerified\": true,
   \"credentials\": [{\"type\": \"password\", \"value\": \"viewer123\", \"temporary\": false}]
 }")
 if [ "$STATUS" = "201" ]; then

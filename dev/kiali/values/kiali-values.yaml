@@ -7,6 +7,7 @@ auth:
     issuer_uri: https://keycloak-dev.easysolution.work/realms/istio
     scopes: [openid, profile, email]
     username_claim: preferred_username
+    disable_rbac: true
 
 deployment:
   resources:

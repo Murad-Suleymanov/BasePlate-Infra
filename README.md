@@ -9,29 +9,44 @@ BasePlate-Infra/
 ├── argocd/                              # Bootstrap
 │   ├── prod/application-root.yaml       # root-infra (prod)
 │   └── dev/application-root.yaml        # root-infra (dev)
-├── charts/                              # Helm charts
+├── charts/                              # Helm charts (local)
 │   ├── infra-applications/              # Generates ArgoCD Application resources
-│   ├── applicationsets/                 # Generates ApplicationSet resources
-│   ├── secrets-config/                  # VaultAuth + VaultStaticSecret per namespace
-│   ├── argocd-config/
-│   ├── gateway-config/
-│   ├── monitoring-config/
-│   └── registry/
-├── prod/                                # Prod environment values
+│   ├── applicationsets/                 # Generates ApplicationSet resources (developer apps)
+│   ├── argocd-config/                   # ArgoCD route, insecure mode, extra resources
+│   ├── gateway-config/                  # Gateway, ClusterIssuer, wildcard cert
+│   ├── monitoring-config/               # Grafana dashboards, ServiceMonitors, alerts, Grafana route
+│   ├── registry/                        # Container registry + UI + GC
+│   ├── secrets-config/                  # VaultConnection + VaultAuth + VaultStaticSecret per namespace
+│   └── istio-config/                    # PeerAuthentication, Telemetry, OAuth2 Proxy, Kiali/Jaeger routes
+├── prod/                                # Prod environment Helm value overrides
 │   ├── infra-applications-values.yaml
-│   ├── vault-secrets-operator/values/
+│   ├── kube-prometheus-stack/values/
+│   ├── istio-config/values/
+│   ├── kiali/values/
 │   ├── secrets-config/values/
-│   └── ...
-├── dev/                                 # Dev environment values
-│   └── (same structure)
-├── vault/prod/                          # Vault server configuration
-│   ├── config/
-│   │   ├── vault.hcl                    # Vault server config
-│   │   └── vault.service                # systemd unit file
-│   └── scripts/
-│       ├── install-vault.sh             # Install Vault binary
-│       ├── init-vault.sh                # Initialize Vault + create secret paths
-│       └── configure-k8s-auth.sh        # Configure K8s auth + policy + role
+│   └── ...                              # (one folder per application)
+├── dev/                                 # Dev environment (same structure as prod)
+├── server/                              # Bare-metal server install scripts
+│   ├── vault/
+│   │   ├── install-vault.sh             # Install Vault binary + Nginx reverse proxy
+│   │   ├── init-vault.sh                # Initialize Vault + create secret paths
+│   │   └── configure-k8s-auth.sh        # Configure K8s auth method + policy + role
+│   └── keycloak/
+│       ├── install-keycloak.sh          # Install Keycloak + Nginx reverse proxy
+│       └── configure-clients.sh         # Create realm, OIDC clients, users; write secrets to Vault
+├── scripts/                             # Helper scripts
+│   ├── set-argocd-password.sh           # Hash + store ArgoCD admin password
+│   ├── set-argocd-password.ps1          # Windows variant
+│   └── bootstrap-pipeline-secret.sh     # One-time GitHub token bootstrap
+├── docs/                                # Documentation
+│   ├── cluster-kubeadm-installation.md  # Full cluster setup from scratch
+│   ├── keycloak-oidc-setup.md           # Keycloak + OAuth2 Proxy + Kiali OIDC
+│   ├── istio-service-mesh.md            # Istio, Kiali, Jaeger, mTLS, tracing, metrics
+│   ├── monitoring-components.md         # Component metric/ServiceMonitor matrix
+│   └── pipeline-injection.md            # Operator → GitHub Actions pipeline injection
+├── install-gateway-api-crds.sh          # Gateway API CRDs (one-time)
+├── install-kube-prometheus-crds.sh      # Prometheus CRDs (one-time)
+├── verify-kube-prometheus-stack.sh      # Verify Prometheus stack health
 └── README.md
 ```
 
@@ -40,28 +55,100 @@ BasePlate-Infra/
 | Repo | Purpose |
 |------|---------|
 | [BasePlate](https://github.com/Murad-Suleymanov/BasePlate) | Go operator, CRD, Helm chart, platform Application |
-| **BasePlate-Infra** (this) | Infra ArgoCD apps, Vault config, install scripts |
+| **BasePlate-Infra** (this) | Infra ArgoCD apps, Helm charts, server scripts, documentation |
 | [BasePlate-Dev](https://github.com/Murad-Suleymanov/BasePlate-Dev) | Developer YAML files (`service_name/env.yaml`) |
+
+---
+
+## Documentation Index
+
+| Document | Covers |
+|----------|--------|
+| **This README** | Architecture overview, installation from scratch, secrets, troubleshooting |
+| [Cluster Installation](docs/cluster-kubeadm-installation.md) | Full kubeadm cluster setup (OS → Calico → ArgoCD → secrets → stabilization) |
+| [Istio Service Mesh](docs/istio-service-mesh.md) | Istio architecture, mTLS, tracing, Kiali, Jaeger, Envoy metrics |
+| [Keycloak OIDC Setup](docs/keycloak-oidc-setup.md) | Keycloak server, realm, clients, OAuth2 Proxy for Jaeger, Kiali OpenID |
+| [Monitoring Components](docs/monitoring-components.md) | Per-component metric endpoint / ServiceMonitor / dashboard matrix |
+| [Pipeline Injection](docs/pipeline-injection.md) | Operator → GitHub Actions workflow + secrets injection |
+
+---
+
+## Architecture Overview
+
+### GitOps Model
+
+```
+Developer pushes YAML to BasePlate-Dev
+        │
+        ▼
+ArgoCD ApplicationSet (watches BasePlate-Dev)
+        │
+        ▼
+Generates per-service Application (chart from BasePlate)
+        │
+        ▼
+Easy-Deploy Operator reconciles BirService CR
+        │
+        ▼
+Deployment + Service + HPA + Istio sidecar
+```
+
+### Infrastructure Components
+
+All components are managed by ArgoCD via the `infra-applications` chart. Each component is an ArgoCD Application.
+
+| Component | Chart | Version | Namespace | Purpose |
+|-----------|-------|---------|-----------|---------|
+| **argocd-config** | local | — | argocd | Route, insecure mode, extra resources |
+| **applicationsets** | local | — | argocd | Developer app generation from BasePlate-Dev |
+| **easy-deploy-platform** | BasePlate repo | — | easy-deploy-system | Go operator + CRDs |
+| **gateway-config** | local | — | nginx-gateway | Gateway, ClusterIssuer (Let's Encrypt), wildcard cert |
+| **nginx-gateway-fabric** | ghcr.io/nginx/charts | 2.4.2 | nginx-gateway | Gateway API implementation (ingress) |
+| **cert-manager** | jetstack | v1.17.2 | cert-manager | TLS certificate automation |
+| **external-dns** | kubernetes-sigs | 1.16.1 | external-dns | Cloudflare DNS record management |
+| **kube-prometheus-stack** | prometheus-community | 82.4.3 | monitoring | Prometheus + Grafana + Alertmanager |
+| **metrics-server** | kubernetes-sigs | 3.12.2 | kube-system | HPA / `kubectl top` metrics |
+| **monitoring-config** | local | — | monitoring | Dashboards, ServiceMonitors, alerts, Grafana route |
+| **registry** | local | — | registry | Container registry + UI + GC cron |
+| **vault-secrets-operator** | hashicorp | 0.9.0 | vault-secrets-operator-system | Syncs Vault secrets to K8s Secrets |
+| **secrets-config** | local | — | (multi-namespace) | VaultConnection + VaultAuth + VaultStaticSecret |
+| **istio-base** | istio | 1.29.1 | istio-system | Istio CRDs |
+| **istiod** | istio | 1.29.1 | istio-system | Istio control plane |
+| **istio-config** | local | — | istio-system | mTLS, Telemetry, OAuth2 Proxy, Kiali/Jaeger routes |
+| **kiali-server** | kiali.org | 2.21.0 | istio-system | Service mesh observability dashboard |
+| **jaeger** | jaegertracing | 4.6.0 | istio-system | Distributed tracing |
+
+### External Servers (Bare-Metal)
+
+These run **outside** the Kubernetes cluster on a separate server:
+
+| Service | DNS | Install Script | Purpose |
+|---------|-----|---------------|---------|
+| **Vault** | `vault.easysolution.work` | `server/vault/install-vault.sh` | Secret management (KV v2) |
+| **Keycloak** | `keycloak.easysolution.work` | `server/keycloak/install-keycloak.sh` | OIDC Identity Provider |
+
+Both use Nginx reverse proxy with TLS (Let's Encrypt wildcard `*.easysolution.work`).
 
 ---
 
 ## Installation (From Scratch)
 
+> For detailed OS-level setup (kernel, containerd, kubeadm), see [Cluster Installation](docs/cluster-kubeadm-installation.md).
+
 ### Prerequisites
 
-- A Kubernetes cluster (kubeadm, k3s, etc.)
+- A Kubernetes cluster (kubeadm recommended, see [cluster doc](docs/cluster-kubeadm-installation.md))
 - ArgoCD installed on the cluster
-- A separate server for Vault (external to K8s)
+- A separate server for Vault and Keycloak (external to K8s)
 - `kubectl`, `curl`, `python3` available on the K8s master node
-- `jq`, `helm`, `vault` CLI are **not required** — all scripts use `curl` only
+- TLS certificates for `*.easysolution.work` (Let's Encrypt)
 
 ### Required Information
 
-Gather these before starting:
-
 | Information | Example | Used in |
 |-------------|---------|---------|
-| Vault server DNS | `vault.easysolution.work` | All scripts |
+| Vault server DNS | `vault.easysolution.work` | All Vault scripts, secrets-config |
+| Keycloak server DNS | `keycloak.easysolution.work` | OIDC clients, Kiali/Jaeger auth |
 | K8s API **public** IP | `116.203.203.121` | `configure-k8s-auth.sh` — Vault connects to this IP |
 | Cloudflare API token | `cf_xxx` | cert-manager, external-dns |
 | GitHub token | `ghp_xxx` | easy-deploy pipeline injection |
@@ -82,18 +169,21 @@ bash install-gateway-api-crds.sh
 bash install-kube-prometheus-crds.sh
 ```
 
-### Step 2: Install Vault Server (on the Vault server)
+### Step 2: Install Vault Server (on the external server)
 
 ```bash
-# SSH into the Vault server
-bash vault/prod/scripts/install-vault.sh
+# SSH into the server
+cd ~/BasePlate-Infra
+bash server/vault/install-vault.sh
 ```
 
-### Step 3: Initialize Vault (from Vault server or K8s master)
+This installs Vault binary, creates an Nginx reverse proxy for `vault.easysolution.work` with TLS, and starts Vault as a systemd service.
+
+### Step 3: Initialize Vault
 
 **First time** (Vault not yet initialized):
 ```bash
-bash vault/prod/scripts/init-vault.sh vault.easysolution.work
+bash server/vault/init-vault.sh vault.easysolution.work
 ```
 
 Output:
@@ -109,7 +199,7 @@ Root Token:   hvs.xxxxx
 
 **If Vault is already initialized:**
 ```bash
-bash vault/prod/scripts/init-vault.sh vault.easysolution.work <root-token>
+bash server/vault/init-vault.sh vault.easysolution.work <root-token>
 ```
 
 This script creates:
@@ -117,7 +207,21 @@ This script creates:
 - Secret paths (`secret/prod/*`, `secret/dev/*`) with `CHANGE_ME` placeholder values
 - Kubernetes auth backends (`kubernetes-prod`, `kubernetes-dev`)
 
-### Step 4: Apply ArgoCD Root Application (on K8s master, one-time)
+### Step 4: Install Keycloak (on the external server)
+
+```bash
+bash server/keycloak/install-keycloak.sh
+```
+
+This installs Keycloak, creates an Nginx reverse proxy for `keycloak.easysolution.work` with TLS. After installation, configure OIDC clients:
+
+```bash
+bash server/keycloak/configure-clients.sh
+```
+
+This creates the `istio` realm, `jaeger-proxy` (confidential) and `kiali` (public) clients, and a `viewer` user. See [Keycloak OIDC Setup](docs/keycloak-oidc-setup.md) for detailed configuration.
+
+### Step 5: Apply ArgoCD Root Application (on K8s master, one-time)
 
 ```bash
 kubectl apply -f argocd/prod/application-root.yaml
@@ -128,11 +232,12 @@ This automatically deploys everything:
 - cert-manager, external-dns, nginx-gateway-fabric
 - kube-prometheus-stack, metrics-server, monitoring-config
 - registry, gateway-config
-- **vault-secrets-operator** (VSO)
-- **secrets-config** (VaultAuth + VaultStaticSecret per namespace)
+- **vault-secrets-operator** (VSO) + **secrets-config**
+- **Istio** (base + istiod + istio-config)
+- **Kiali** + **Jaeger**
 
 > **Expected:** `external-dns` and `Grafana` will crash-loop at this point — this is normal.
-> They cannot start without Vault secrets. They will recover automatically after Step 6.
+> They cannot start without Vault secrets. They will recover automatically after Step 7.
 
 Verify:
 ```bash
@@ -142,11 +247,11 @@ kubectl get pods -n vault-secrets-operator-system
 
 Wait until the VSO pod shows `Running` status before proceeding.
 
-### Step 5: Configure Vault K8s Auth (on K8s master)
+### Step 6: Configure Vault K8s Auth (on K8s master)
 
 ```bash
 export VAULT_TOKEN=<root-token>
-bash vault/prod/scripts/configure-k8s-auth.sh vault.easysolution.work prod https://<K8S_PUBLIC_IP>:6443
+bash server/vault/configure-k8s-auth.sh vault.easysolution.work prod https://<K8S_PUBLIC_IP>:6443
 ```
 
 This script creates:
@@ -161,20 +266,8 @@ This script creates:
 > | `permission denied` (403) | Vault cannot reach the K8s API | Provide the correct public IP, check firewall |
 > | `connection refused` | Port is closed | Open 6443 on K8s master firewall for the Vault server IP |
 > | `certificate verify failed` | CA cert mismatch | Re-run the script (CA will be refreshed) |
->
-> Verify the config:
-> ```bash
-> curl -sk -H "X-Vault-Token: ${VAULT_TOKEN}" \
->   https://vault.easysolution.work/v1/auth/kubernetes-prod/config | python3 -m json.tool
-> ```
-> Check that `kubernetes_host` shows the correct IP. If wrong, simply re-run the script — it overwrites the existing config.
 
-> **FIREWALL NOTES:**
-> - Open port 6443 on K8s master **only** for the Vault server's IP.
-> - If you opened it for the wrong IP: `ufw delete allow from <WRONG_IP> to any port 6443`
-> - All scripts are idempotent — re-running them with the correct values overwrites previous config.
-
-### Step 6: Update Secret Values
+### Step 7: Update Secret Values
 
 Replace the `CHANGE_ME` placeholders in Vault with real credentials:
 
@@ -202,10 +295,15 @@ curl -sk -X POST "${VAULT_ADDR}/v1/secret/data/prod/registry" \
   -H "X-Vault-Token: ${VAULT_TOKEN}" \
   -d '{"data": {"htpasswd": "admin:BCRYPT_HASH"}}'
 
-# ArgoCD (optional — ArgoCD creates its own secret)
-curl -sk -X POST "${VAULT_ADDR}/v1/secret/data/prod/argocd" \
+# Keycloak secrets (for Jaeger OAuth2 Proxy)
+curl -sk -X POST "${VAULT_ADDR}/v1/secret/data/istio/keycloak" \
   -H "X-Vault-Token: ${VAULT_TOKEN}" \
-  -d '{"data": {"admin.password": "BCRYPT_HASH", "admin.passwordMtime": "2026-01-01T00:00:00Z"}}'
+  -d '{"data": {"jaeger-client-secret": "CLIENT_SECRET_FROM_KEYCLOAK", "oauth2-proxy-cookie-secret": "RANDOM_32BYTE_BASE64"}}'
+```
+
+Generate a cookie secret:
+```bash
+python3 -c "import os,base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"
 ```
 
 VSO syncs secrets every 1 hour. To force an immediate sync:
@@ -218,7 +316,7 @@ kubectl get vaultstaticsecrets -A -o custom-columns='NS:.metadata.namespace,NAME
   done
 ```
 
-### Step 7: Verify
+### Step 8: Verify
 
 ```bash
 # All secrets created?
@@ -227,6 +325,7 @@ kubectl get secret cloudflare-api-token -n cert-manager
 kubectl get secret cloudflare-api-token -n external-dns
 kubectl get secret github-pipeline-secret -n easy-deploy-system
 kubectl get secret registry-auth -n registry
+kubectl get secret keycloak-secrets -n istio-system
 
 # All pods running?
 kubectl get pods -A | grep -v Running
@@ -239,14 +338,15 @@ kubectl get applications -n argocd
 
 ## Secret Dependency Matrix
 
-| App | Secret | Behavior Without Secret |
-|-----|--------|------------------------|
-| **external-dns** | `cloudflare-api-token` | Pod **will not start** (env required) |
-| **Grafana** | `grafana-admin-secret` | Pod **will not start** (existingSecret not found) |
-| **cert-manager ClusterIssuer** | `cloudflare-api-token` | cert-manager starts, but **cannot issue certificates** |
-| **easy-deploy-platform** | `github-pipeline-secret` | Pod starts (`optional: true`), but **pipeline injection disabled** |
-| **registry** | `registry-auth` | htpasswd is hardcoded in values, **starts fine** |
-| **ArgoCD** | `argocd-secret` | ArgoCD creates its own secret, **starts fine** |
+| App | Secret | Vault Path | Behavior Without Secret |
+|-----|--------|------------|------------------------|
+| **external-dns** | `cloudflare-api-token` | `{env}/cloudflare` | Pod **will not start** (env required) |
+| **Grafana** | `grafana-admin-secret` | `{env}/monitoring/grafana` | Pod **will not start** (existingSecret not found) |
+| **cert-manager ClusterIssuer** | `cloudflare-api-token` | `{env}/cloudflare` | cert-manager starts, but **cannot issue certificates** |
+| **easy-deploy-platform** | `github-pipeline-secret` | `{env}/github` | Pod starts (`optional: true`), but **pipeline injection disabled** |
+| **registry** | `registry-auth` | `{env}/registry` | htpasswd is hardcoded in values, **starts fine** |
+| **ArgoCD** | `argocd-secret` | `{env}/argocd` | ArgoCD creates its own secret, **starts fine** |
+| **OAuth2 Proxy (Jaeger)** | `keycloak-secrets` | `istio/keycloak` | OAuth2 Proxy **will not start** (env required) |
 
 ---
 
@@ -304,15 +404,51 @@ secrets:
 
 ---
 
+## Environment Differences
+
+| Setting | Prod | Dev |
+|---------|------|-----|
+| Target IP | `116.203.203.121` | `178.104.84.100` |
+| Domain pattern | `*.easysolution.work` | `*-dev.easysolution.work` |
+| Prometheus retention | 7d | 3d |
+| Prometheus storage | 10Gi | 5Gi |
+| Grafana storage | 2Gi | 1Gi |
+| Alertmanager storage | 5Gi | 2Gi |
+| Kiali resources (request/limit) | 100m-500m CPU, 256-512Mi | 50m-200m CPU, 128-256Mi |
+| Keycloak issuer | `keycloak.easysolution.work` | `keycloak-dev.easysolution.work` |
+| Tracing sample rate | 10% | 10% |
+
+Both environments use the same chart templates; only values differ.
+
+---
+
+## Monitoring & Metrics
+
+Prometheus (kube-prometheus-stack) is configured to discover **all** `ServiceMonitor` and `PodMonitor` resources across all namespaces (`selectorNilUsesHelmValues: false`).
+
+The `monitoring-config` chart deploys the following scrape targets:
+
+| Target | Type | Port | Namespace |
+|--------|------|------|-----------|
+| Easy-Deploy Operator | PodMonitor | :8080/metrics | easy-deploy-system |
+| Calico Felix | ServiceMonitor + headless Service | :9091/metrics | kube-system |
+| Istiod | ServiceMonitor | :15014/metrics | istio-system |
+| Envoy sidecars | PodMonitor | :15090/stats/prometheus | all injected namespaces |
+| Kiali | ServiceMonitor | :20001/metrics | istio-system |
+| Jaeger | ServiceMonitor | :14269/metrics | istio-system |
+
+See [Monitoring Components](docs/monitoring-components.md) for the full matrix of all components.
+
+Kiali connects to Prometheus at `http://monitoring-kube-prometheus-prometheus.monitoring:9090` and uses Istio metrics (`istio_requests_total`, etc.) to display traffic graphs, error rates, and latency. See [Istio Service Mesh](docs/istio-service-mesh.md) for details.
+
+---
+
 ## Troubleshooting
 
 ### VSO is not creating secrets
 
 ```bash
-# Check VaultStaticSecret status
 kubectl describe vaultstaticsecret <name> -n <namespace>
-
-# Check VSO logs
 kubectl logs -n vault-secrets-operator-system -l app.kubernetes.io/name=vault-secrets-operator --tail=20
 ```
 
@@ -336,10 +472,10 @@ kubectl apply -f argocd/prod/application-root.yaml
 export VAULT_TOKEN=<root-token>
 export VAULT_ADDR=https://vault.easysolution.work
 
-# K8s auth config (is kubernetes_host the correct IP?)
+# K8s auth config
 curl -sk -H "X-Vault-Token: ${VAULT_TOKEN}" "${VAULT_ADDR}/v1/auth/kubernetes-prod/config" | python3 -m json.tool
 
-# Role (is bound_service_account correct?)
+# Role
 curl -sk -H "X-Vault-Token: ${VAULT_TOKEN}" "${VAULT_ADDR}/v1/auth/kubernetes-prod/role/vault-secrets-operator" | python3 -m json.tool
 
 # Policy
@@ -354,7 +490,7 @@ curl -sk -H "X-Vault-Token: ${VAULT_TOKEN}" "${VAULT_ADDR}/v1/secret/data/prod/m
 All scripts are idempotent — re-running them overwrites the existing configuration:
 ```bash
 export VAULT_TOKEN=<root-token>
-bash vault/prod/scripts/configure-k8s-auth.sh vault.easysolution.work prod https://<CORRECT_IP>:6443
+bash server/vault/configure-k8s-auth.sh vault.easysolution.work prod https://<CORRECT_IP>:6443
 ```
 
 ---
@@ -388,4 +524,6 @@ When a developer adds `repo: https://github.com/user/repo` in BasePlate-Dev, the
 - Injects `.github/workflows/build-push.yaml` into the repo
 - Adds `REGISTRY_USERNAME`, `REGISTRY_PASSWORD` to GitHub Actions secrets
 
-**Prerequisite:** `github-pipeline-secret` must contain a valid `GITHUB_TOKEN` — synced from Vault (configured in Step 6).
+**Prerequisite:** `github-pipeline-secret` must contain a valid `GITHUB_TOKEN` — synced from Vault (configured in Step 7).
+
+See [Pipeline Injection](docs/pipeline-injection.md) for details.

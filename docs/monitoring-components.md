@@ -21,8 +21,12 @@ Hər run olunan sistem komponenti üçün:
 | **Alertmanager** | monitoring | :9093/metrics | ✅ kube-prom | — |
 | **Calico Felix** | kube-system | :9091/metrics | ✅ bizim | ❌ |
 | **BirService apps** (hello-csharp və s.) | loadtest və s. | :8080/metrics | ✅ operator | ✅ BirService |
-| **ExternalDNS** | external-dns | :7979/metrics | ? | ❌ |
-| **cert-manager** | cert-manager | var | ? | ❌ |
+| **Istiod** | istio-system | :15014/metrics | ✅ bizim | ❌ |
+| **Envoy sidecars** | (all injected) | :15090/stats/prometheus | ✅ bizim (PodMonitor) | ❌ |
+| **Jaeger** | istio-system | :14269/metrics | ✅ bizim | ❌ |
+| **Kiali** | istio-system | :9090/metrics | ✅ bizim | ❌ |
+| **ExternalDNS** | external-dns | :7979/metrics | ✅ chart | ❌ |
+| **cert-manager** | cert-manager | :9402/metrics | ✅ chart | ❌ |
 
 ---
 
@@ -48,5 +52,13 @@ Hər run olunan sistem komponenti üçün:
 - ServiceMonitor ✅ (bizim calico-servicemonitor.yaml)
 - Dashboard: Felix metrik paneli (ops/sec, policy count və s.)
 
-### 4. ExternalDNS, cert-manager
-- Chart-lar özləri ServiceMonitor əlavə edə bilər — yoxlanmalıdır
+### 4. ExternalDNS
+- ServiceMonitor: ✅ chart dəstəkləyir, `serviceMonitor.enabled: true` aktiv edildi
+
+### 5. cert-manager
+- ServiceMonitor: ✅ chart dəstəkləyir, `prometheus.servicemonitor.enabled: true` aktiv edildi
+
+### 6. Registry / Registry-UI
+- Docker Registry v2 default-da `/metrics` expose etmir (debug mode lazımdır)
+- Registry-UI (joxit) metrics endpoint-i yoxdur
+- Alternativ: TCP/HTTP probe ilə "up" yoxlaması
