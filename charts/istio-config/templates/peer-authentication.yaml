@@ -16,5 +16,12 @@ metadata:
 spec:
   mtls:
     mode: {{ $.Values.meshConfig.mtlsMode }}
+{{- if $.Values.meshConfig.permissivePorts }}
+  portLevelMtls:
+{{- range $.Values.meshConfig.permissivePorts }}
+    {{ . }}:
+      mode: PERMISSIVE
+{{- end }}
+{{- end }}
 ---
 {{- end }}

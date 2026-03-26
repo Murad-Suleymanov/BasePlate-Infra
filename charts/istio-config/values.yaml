@@ -11,6 +11,7 @@ injectedNamespaces:
 
 meshConfig:
   mtlsMode: STRICT
+  permissivePorts: []
 
 tracing:
   enabled: true
