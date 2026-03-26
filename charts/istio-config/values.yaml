@@ -20,3 +20,8 @@ route:
   sections:
     - http
     - https
+
+oauth2Proxy:
+  enabled: false
+  issuerUrl: ""
+  clientId: jaeger-proxy

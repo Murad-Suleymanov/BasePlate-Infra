@@ -1,7 +1,12 @@
 istio_namespace: istio-system
 
 auth:
-  strategy: anonymous
+  strategy: openid
+  openid:
+    client_id: kiali
+    issuer_uri: https://keycloak.easysolution.work/realms/istio
+    scopes: [openid, profile, email]
+    username_claim: preferred_username
 
 deployment:
   resources:

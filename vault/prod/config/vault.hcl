@@ -4,13 +4,15 @@ storage "raft" {
 }
 
 listener "tcp" {
-  address       = "0.0.0.0:443"
-  tls_cert_file = "/etc/vault.d/tls/fullchain.pem"
-  tls_key_file  = "/etc/vault.d/tls/privkey.pem"
+  address     = "127.0.0.1:8200"
+  tls_disable = true
 }
 
 api_addr     = "https://vault.easysolution.work"
 cluster_addr = "https://vault.easysolution.work:8201"
+
+# TLS is terminated by Nginx reverse proxy on port 443.
+# Vault listens locally on 8200 (plain HTTP) and is proxied via Nginx.
 
 ui = true
 

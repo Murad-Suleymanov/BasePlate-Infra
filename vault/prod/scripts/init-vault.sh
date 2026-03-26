@@ -74,6 +74,8 @@ kv_put "prod/github"             '{"GITHUB_TOKEN": "CHANGE_ME", "REGISTRY_USERNA
 kv_put "prod/registry"           '{"htpasswd": "CHANGE_ME"}'
 kv_put "prod/argocd"             "{\"admin.password\": \"CHANGE_ME_BCRYPT_HASH\", \"admin.passwordMtime\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}"
 
+kv_put "istio/keycloak"          '{"jaeger-client-secret": "CHANGE_ME", "oauth2-proxy-cookie-secret": "CHANGE_ME"}'
+
 kv_put "dev/monitoring/grafana"  '{"admin-user": "admin", "admin-password": "CHANGE_ME"}'
 kv_put "dev/cloudflare"          '{"cloudflare_api_token": "CHANGE_ME"}'
 kv_put "dev/github"              '{"GITHUB_TOKEN": "CHANGE_ME", "REGISTRY_USERNAME": "CHANGE_ME", "REGISTRY_PASSWORD": "CHANGE_ME"}'

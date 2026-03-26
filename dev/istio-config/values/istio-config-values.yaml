@@ -18,3 +18,8 @@ tracing:
 
 route:
   sections: [http, https]
+
+oauth2Proxy:
+  enabled: true
+  issuerUrl: https://keycloak-dev.easysolution.work/realms/istio
+  clientId: jaeger-proxy
