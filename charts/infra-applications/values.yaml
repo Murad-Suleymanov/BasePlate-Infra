@@ -260,8 +260,8 @@ applications:
       - group: ""
         kind: ConfigMap
         name: kiali
-        jqPathExpressions:
-          - .data.config\\.yaml
+        jsonPointers:
+          - /data
 
   jaeger:
     enabled: true
