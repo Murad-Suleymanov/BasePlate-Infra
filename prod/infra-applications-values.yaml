@@ -255,6 +255,13 @@ applications:
     valuesPath: kiali/values/kiali-values.yaml
     syncOptions:
       - CreateNamespace=true
+      - RespectIgnoreDifferences=true
+    ignoreDifferences:
+      - group: ""
+        kind: ConfigMap
+        name: kiali
+        jqPathExpressions:
+          - .data.config\\.yaml
 
   jaeger:
     enabled: true
