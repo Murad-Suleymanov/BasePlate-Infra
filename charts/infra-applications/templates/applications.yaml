@@ -47,6 +47,10 @@ spec:
       - {{ . }}
 {{- end }}
 {{- end }}
+{{- if $app.managedNamespaceMetadata }}
+    managedNamespaceMetadata:
+{{- toYaml $app.managedNamespaceMetadata | nindent 6 }}
+{{- end }}
 {{- if $app.ignoreDifferences }}
   ignoreDifferences:
 {{- toYaml $app.ignoreDifferences | nindent 4 }}
