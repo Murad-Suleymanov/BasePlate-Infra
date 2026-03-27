@@ -57,6 +57,10 @@ dashboards:
     enabled: true
     refreshInterval: 30s
 
+# New dashboards: drop pure Grafana JSON into charts/monitoring-config/dashboards/
+# Auto-discovered and deployed as ConfigMaps. No config needed.
+#
+# Extra dashboards from values (for environment-specific dashboards):
 # extraDashboards:
 #   my-dashboard:
 #     json: |

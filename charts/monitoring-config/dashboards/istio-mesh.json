@@ -1,0 +1,280 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "sum(up{app=\"istiod\"})",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "Istiod Up",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "count(count by (pod) (container_memory_usage_bytes{container=\"istio-proxy\"}))",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "Active Envoy Sidecars",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "sum(up{job=~\".*kiali.*\"})",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "Kiali Up",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "sum(up{job=~\".*jaeger.*\"})",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "Jaeger Up",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "ops" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "sum(rate(pilot_xds_pushes{type=\"cds\"}[5m]))",
+          "legendFormat": "CDS",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(pilot_xds_pushes{type=\"eds\"}[5m]))",
+          "legendFormat": "EDS",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(rate(pilot_xds_pushes{type=\"lds\"}[5m]))",
+          "legendFormat": "LDS",
+          "refId": "C"
+        },
+        {
+          "expr": "sum(rate(pilot_xds_pushes{type=\"rds\"}[5m]))",
+          "legendFormat": "RDS",
+          "refId": "D"
+        }
+      ],
+      "title": "Istiod XDS Pushes / sec",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "s" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "id": 6,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(pilot_proxy_convergence_time_bucket[5m])) by (le))",
+          "legendFormat": "P50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.90, sum(rate(pilot_proxy_convergence_time_bucket[5m])) by (le))",
+          "legendFormat": "P90",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(pilot_proxy_convergence_time_bucket[5m])) by (le))",
+          "legendFormat": "P99",
+          "refId": "C"
+        }
+      ],
+      "title": "Proxy Convergence Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "reqps" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
+      "id": 7,
+      "targets": [
+        {
+          "expr": "sum(rate(istio_requests_total[5m])) by (destination_service_name)",
+          "legendFormat": "{{ destination_service_name }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Mesh Request Rate by Destination Service",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "percentunit" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "id": 8,
+      "targets": [
+        {
+          "expr": "sum(rate(istio_requests_total{response_code=~\"5.*\"}[5m])) by (destination_service_name) / sum(rate(istio_requests_total[5m])) by (destination_service_name)",
+          "legendFormat": "{{ destination_service_name }}",
+          "refId": "A"
+        }
+      ],
+      "title": "5xx Error Rate by Service",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "ms" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "id": 9,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket[5m])) by (le, destination_service_name))",
+          "legendFormat": "{{ destination_service_name }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Request Latency P95 by Service",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "Bps" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "id": 10,
+      "targets": [
+        {
+          "expr": "sum(rate(istio_tcp_sent_bytes_total[5m])) by (destination_service_name)",
+          "legendFormat": "sent: {{ destination_service_name }}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(istio_tcp_received_bytes_total[5m])) by (destination_service_name)",
+          "legendFormat": "recv: {{ destination_service_name }}",
+          "refId": "B"
+        }
+      ],
+      "title": "TCP Traffic by Service",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "id": 11,
+      "targets": [
+        {
+          "expr": "sum(pilot_conflict_inbound_listener{}) by (resource)",
+          "legendFormat": "inbound: {{ resource }}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(pilot_conflict_outbound_listener_tcp_over_current_tcp{}) by (resource)",
+          "legendFormat": "outbound: {{ resource }}",
+          "refId": "B"
+        }
+      ],
+      "title": "Istiod Config Conflicts",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["istio", "mesh", "envoy", "service-mesh"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Istio Service Mesh",
+  "uid": "istio-service-mesh",
+  "version": 1,
+  "weekStart": ""
+}
