@@ -41,6 +41,27 @@ prometheus:
     serviceMonitorNamespaceSelector: {}
     podMonitorNamespaceSelector: {}
     retention: 3d
+    additionalScrapeConfigs:
+      - job_name: 'vault'
+        scheme: https
+        metrics_path: /v1/sys/metrics
+        params:
+          format: ['prometheus']
+        tls_config:
+          insecure_skip_verify: true
+        static_configs:
+          - targets: ['vault.easysolution.work']
+            labels:
+              instance: vault
+      - job_name: 'keycloak'
+        scheme: https
+        metrics_path: /metrics
+        tls_config:
+          insecure_skip_verify: true
+        static_configs:
+          - targets: ['keycloak.easysolution.work']
+            labels:
+              instance: keycloak
     storageSpec:
       volumeClaimTemplate:
         spec:

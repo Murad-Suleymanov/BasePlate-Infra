@@ -30,6 +30,9 @@ storage "raft" {
 listener "tcp" {
   address     = "127.0.0.1:8200"
   tls_disable = true
+  telemetry {
+    unauthenticated_metrics_access = true
+  }
 }
 
 api_addr     = "https://vault.easysolution.work"
@@ -40,6 +43,11 @@ disable_mlock = true
 
 max_lease_ttl     = "768h"
 default_lease_ttl = "768h"
+
+telemetry {
+  prometheus_retention_time = "30s"
+  disable_hostname          = true
+}
 EOF
 chown vault:vault /etc/vault.d/vault.hcl
 

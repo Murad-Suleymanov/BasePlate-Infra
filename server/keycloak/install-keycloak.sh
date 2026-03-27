@@ -50,7 +50,7 @@ Environment=KC_HOSTNAME=https://${KEYCLOAK_HOSTNAME}
 Environment=KC_PROXY_HEADERS=xforwarded
 Environment=KC_HTTP_ENABLED=true
 Environment=KC_HTTP_PORT=8080
-ExecStart=${INSTALL_DIR}/bin/kc.sh start
+ExecStart=${INSTALL_DIR}/bin/kc.sh start --metrics-enabled=true --health-enabled=true
 Restart=on-failure
 RestartSec=10
 
@@ -80,6 +80,11 @@ server {
     ssl_certificate_key /etc/ssl/easysolution/privkey.pem;
     ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_ciphers         HIGH:!aNULL:!MD5;
+
+    location /metrics {
+        proxy_pass         http://127.0.0.1:9000/metrics;
+        proxy_set_header   Host $host;
+    }
 
     location / {
         proxy_pass         http://127.0.0.1:8080;

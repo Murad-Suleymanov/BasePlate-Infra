@@ -27,6 +27,8 @@ Hər run olunan sistem komponenti üçün:
 | **Kiali** | istio-system | :9090/metrics | ✅ bizim | ❌ |
 | **ExternalDNS** | external-dns | :7979/metrics | ✅ chart | ❌ |
 | **cert-manager** | cert-manager | :9402/metrics | ✅ chart | ❌ |
+| **Vault** | external (bare-metal) | :8200/v1/sys/metrics | ✅ additionalScrapeConfigs | ❌ |
+| **Keycloak** | external (bare-metal) | :9000/metrics (via Nginx) | ✅ additionalScrapeConfigs | ❌ |
 
 ---
 
@@ -62,3 +64,61 @@ Hər run olunan sistem komponenti üçün:
 - Docker Registry v2 default-da `/metrics` expose etmir (debug mode lazımdır)
 - Registry-UI (joxit) metrics endpoint-i yoxdur
 - Alternativ: TCP/HTTP probe ilə "up" yoxlaması
+
+### 7. Vault (external)
+- Prometheus `additionalScrapeConfigs` ilə scrape olunur (ServiceMonitor istifadə oluna bilməz — Kubernetes xaricindədir)
+- Metrics endpoint: `https://vault.easysolution.work/v1/sys/metrics?format=prometheus`
+- Auth: `unauthenticated_metrics_access = true` ilə token tələb etmir
+- Aktivləşdirmə (`vault.hcl`):
+  ```hcl
+  listener "tcp" {
+    address     = "127.0.0.1:8200"
+    tls_disable = true
+    telemetry {
+      unauthenticated_metrics_access = true
+    }
+  }
+
+  telemetry {
+    prometheus_retention_time = "30s"
+    disable_hostname          = true
+  }
+  ```
+- **Qeyd:** Vault 1.15+ versiyalarda `unauthenticated_metrics_access` `listener.telemetry` blokunda olmalıdır (top-level `telemetry`-də dəstəklənmir)
+- Prometheus scrape config (`kube-prometheus-stack-values.yaml`):
+  ```yaml
+  additionalScrapeConfigs:
+    - job_name: 'vault'
+      scheme: https
+      metrics_path: /v1/sys/metrics
+      params:
+        format: ['prometheus']
+      tls_config:
+        insecure_skip_verify: true
+      static_configs:
+        - targets: ['vault.easysolution.work']
+  ```
+
+### 8. Keycloak (external)
+- Prometheus `additionalScrapeConfigs` ilə scrape olunur (ServiceMonitor istifadə oluna bilməz — Kubernetes xaricindədir)
+- Metrics endpoint: `https://keycloak.easysolution.work/metrics` (Nginx → localhost:9000)
+- Auth: lazım deyil
+- Aktivləşdirmə: `kc.sh start --metrics-enabled=true --health-enabled=true`
+- Nginx-də `/metrics` location əlavə olunmalıdır (port 9000-ə proxy)
+- Prometheus scrape config (`kube-prometheus-stack-values.yaml`):
+  ```yaml
+  additionalScrapeConfigs:
+    - job_name: 'keycloak'
+      scheme: https
+      metrics_path: /metrics
+      tls_config:
+        insecure_skip_verify: true
+      static_configs:
+        - targets: ['keycloak.easysolution.work']
+  ```
+
+### Niyə `additionalScrapeConfigs`?
+Vault və Keycloak Kubernetes klasterinin xaricində, bare-metal serverdə işləyir. `ServiceMonitor`
+yalnız klaster daxilindəki Kubernetes Service-lər üçün işləyir. External target-lər üçün
+Prometheus-un `static_configs` + `additionalScrapeConfigs` mexanizmi istifadə olunur.
+`insecure_skip_verify: true` Prometheus pod-unun server sertifikatını verify edə bilmədiyinə görə lazımdır.

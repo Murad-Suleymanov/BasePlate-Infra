@@ -823,3 +823,148 @@ echo "  sleep 30"
 echo "  kubectl delete pod -n istio-system -l app.kubernetes.io/name=oauth2-proxy-jaeger"
 echo "  kubectl delete pod -n istio-system -l app.kubernetes.io/name=kiali"
 ```
+
+---
+
+## Appendix: Prometheus Metrics for Vault & Keycloak
+
+Both Vault and Keycloak run on a bare-metal server outside Kubernetes. Since they are not Kubernetes Services, `ServiceMonitor` cannot be used. Instead, Prometheus scrapes them via `additionalScrapeConfigs` with `static_configs`.
+
+### Step 1: Enable Vault Metrics
+
+Edit `/etc/vault.d/vault.hcl` on the bare-metal server. Two changes are needed:
+
+1. Add `telemetry` sub-block inside the `listener` stanza (Vault 1.15+ requires this placement):
+
+```hcl
+listener "tcp" {
+  address     = "127.0.0.1:8200"
+  tls_disable = true
+  telemetry {
+    unauthenticated_metrics_access = true
+  }
+}
+```
+
+2. Keep the top-level `telemetry` stanza for retention settings:
+
+```hcl
+telemetry {
+  prometheus_retention_time = "30s"
+  disable_hostname          = true
+}
+```
+
+`unauthenticated_metrics_access = true` allows Prometheus to scrape without a Vault token. Without this flag, every scrape request would need an `X-Vault-Token` header, which Prometheus does not natively support.
+
+> **Important:** In Vault 1.15+, placing `unauthenticated_metrics_access` in the top-level `telemetry` block causes a warning and has no effect. It must be inside `listener.telemetry`.
+
+Restart Vault (unseal required after restart):
+
+```bash
+sudo systemctl restart vault
+export VAULT_ADDR=http://127.0.0.1:8200
+vault operator unseal <KEY_1>
+vault operator unseal <KEY_2>
+vault operator unseal <KEY_3>
+```
+
+**Verify:**
+
+```bash
+curl -sk "https://vault.easysolution.work/v1/sys/metrics?format=prometheus" | head -5
+```
+
+### Step 2: Enable Keycloak Metrics
+
+Edit `/etc/systemd/system/keycloak.service` on the bare-metal server:
+
+```ini
+ExecStart=/opt/keycloak/bin/kc.sh start --metrics-enabled=true --health-enabled=true
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart keycloak
+```
+
+Keycloak exposes metrics on **management port 9000**, not the main port 8080. Add an Nginx proxy location **before** the `location /` block in `/etc/nginx/sites-available/keycloak.conf`:
+
+```nginx
+location /metrics {
+    proxy_pass         http://127.0.0.1:9000/metrics;
+    proxy_set_header   Host $host;
+}
+```
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+**Verify:**
+
+```bash
+curl -sk https://keycloak.easysolution.work/metrics | head -5
+```
+
+### Step 3: Add Prometheus Scrape Configs
+
+Add the following to `kube-prometheus-stack-values.yaml` under `prometheus.prometheusSpec`:
+
+```yaml
+additionalScrapeConfigs:
+  - job_name: 'vault'
+    scheme: https
+    metrics_path: /v1/sys/metrics
+    params:
+      format: ['prometheus']
+    tls_config:
+      insecure_skip_verify: true
+    static_configs:
+      - targets: ['vault.easysolution.work']
+        labels:
+          instance: vault
+  - job_name: 'keycloak'
+    scheme: https
+    metrics_path: /metrics
+    tls_config:
+      insecure_skip_verify: true
+    static_configs:
+      - targets: ['keycloak.easysolution.work']
+        labels:
+          instance: keycloak
+```
+
+**Explanation of fields:**
+- `scheme: https` — targets are behind Nginx with TLS
+- `tls_config.insecure_skip_verify: true` — Prometheus pod does not have the server's CA certificate, so TLS verification is skipped
+- `metrics_path` — Vault uses `/v1/sys/metrics`, Keycloak uses `/metrics`
+- `params.format: ['prometheus']` — Vault needs this query parameter to return Prometheus format (default is JSON)
+- `static_configs` — since these are not Kubernetes services, targets are specified as static hostnames
+
+After ArgoCD syncs the change, verify targets are UP in Prometheus UI: **Status → Targets → vault / keycloak**.
+
+### Step 4: Verify in Prometheus
+
+```
+# Vault — check if unsealed
+vault_core_unsealed
+
+# Keycloak — check JVM uptime
+base_jvm_uptime_seconds
+```
+
+### Key Metrics Available
+
+**Vault:**
+- `vault_core_unsealed` — seal status (1 = unsealed)
+- `vault_token_count` — active token count
+- `vault_secret_kv_count` — KV secret count
+- `vault_runtime_alloc_bytes` — memory allocation
+- `vault_barrier_get_count` / `vault_barrier_put_count` — storage operations
+
+**Keycloak:**
+- `vendor_cache_container_stats_*` — Infinispan cache statistics
+- `base_jvm_uptime_seconds` — JVM uptime
+- `base_memory_usedHeap_bytes` — heap usage
+- `vendor_statistics_*` — session/login statistics

@@ -436,6 +436,8 @@ The `monitoring-config` chart deploys the following scrape targets:
 | Envoy sidecars | PodMonitor | :15090/stats/prometheus | all injected namespaces |
 | Kiali | ServiceMonitor | :9090/metrics | istio-system |
 | Jaeger | ServiceMonitor | :8888/metrics | istio-system |
+| Vault (external) | additionalScrapeConfigs | :443/v1/sys/metrics | bare-metal server |
+| Keycloak (external) | additionalScrapeConfigs | :443/metrics | bare-metal server |
 
 See [Monitoring Components](docs/monitoring-components.md) for the full matrix of all components.
 
