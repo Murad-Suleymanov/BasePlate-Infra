@@ -107,6 +107,11 @@ rbac:
         apiGroups: [""]
         resources: ["services", "secrets"]
         verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+      pods:
+        enabled: true
+        apiGroups: [""]
+        resources: ["pods"]
+        verbs: ["get", "list", "watch"]
       jobs:
         enabled: true
         apiGroups: ["batch"]
