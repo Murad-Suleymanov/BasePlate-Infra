@@ -2,7 +2,7 @@ name: easy-deploy-operator
 
 operator:
   containerName: manager
-  image: ghcr.io/murad-suleymanov/easy-deploy-operator:2eaa2b2d576529c782f46a14d527c20cb682c587
+  image: ghcr.io/murad-suleymanov/easy-deploy-operator:d62cca49317392a61d8986e38648ed0d9b263cd0
   imagePullPolicy: Always
   replicas: 1
 
