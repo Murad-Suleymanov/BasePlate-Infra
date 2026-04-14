@@ -65,6 +65,8 @@ sudo apt-mark hold kubelet kubeadm kubectl
 
 ## 4) kubeadm init + CNI
 
+Automated option (control-plane node: OS → containerd → packages → `kubeadm init` → Calico → local-path + Argo CD + CRD scripts): see `scripts/bootstrap-kubeadm-control-plane.sh` in this repo (`sudo ./scripts/bootstrap-kubeadm-control-plane.sh all`).
+
 ```bash
 sudo kubeadm init --pod-network-cidr=192.168.0.0/16
 
@@ -82,6 +84,22 @@ Enable Calico Felix metrics (required for Calico ServiceMonitor on port `9091`):
 kubectl -n kube-system set env daemonset/calico-node FELIX_PROMETHEUSMETRICSENABLED=true
 kubectl -n kube-system rollout status daemonset/calico-node
 ```
+
+### 4b) Worker nodes (when you add them later)
+
+1. **Control-plane** (after `init` + CNI): join sətri artıq saxlanılıb — `sudo cat /root/kubeadm-join.sh` (və ya `kubeadm token create --print-join-command` — token müddəti bitərsə).
+2. **Hər worker**-də: control-plane ilə **eyni** `K8S_VERSION` (məs. `1.30`), sonra bu repodan:
+   - **Minimal (yalnız kubeadm + join):** `scripts/kubeadm-minimal-worker.sh` — `sudo ./scripts/kubeadm-minimal-worker.sh ./join.txt`
+   - **Tam bootstrap skripti ilə:** `scripts/bootstrap-kubeadm-worker.sh` (əvvəlki variant).
+   ```bash
+   cd ~/BasePlate-Infra
+   chmod +x scripts/kubeadm-minimal-worker.sh
+   # join sətirini faylda saxla (məs. scp ilə /root/kubeadm-join.sh worker-ə kopyala)
+   sudo ./scripts/kubeadm-minimal-worker.sh /path/to/join-one-line.txt
+   ```
+   və ya: `sudo KUBEADM_JOIN_CMD='kubeadm join ...' ./scripts/kubeadm-minimal-worker.sh`
+3. Worker-də **`kubeadm init` / Calico / addons işlətmə** — yalnız hazırlıq + `kubeadm join` (`kubeadm-minimal-worker.sh` bunu edir).
+4. Yoxlama (control-plane): `kubectl get nodes -o wide`
 
 ## 5) Clone repositories
 
