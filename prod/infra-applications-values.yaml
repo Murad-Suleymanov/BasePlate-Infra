@@ -231,6 +231,34 @@ applications:
         jqPathExpressions:
           - .webhooks[]?.failurePolicy
 
+  istio-cni:
+    enabled: true
+    destinationNamespace: istio-system
+    source:
+      repoURL: https://istio-release.storage.googleapis.com/charts
+      chart: cni
+      targetRevision: "1.29.1"
+      helm:
+        releaseName: istio-cni
+    valuesPath: istio-cni/values/istio-cni-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+
+  ztunnel:
+    enabled: true
+    destinationNamespace: istio-system
+    source:
+      repoURL: https://istio-release.storage.googleapis.com/charts
+      chart: ztunnel
+      targetRevision: "1.29.1"
+      helm:
+        releaseName: ztunnel
+    valuesPath: ztunnel/values/ztunnel-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+
   istio-config:
     enabled: true
     destinationNamespace: istio-system
