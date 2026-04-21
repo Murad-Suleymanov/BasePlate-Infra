@@ -94,7 +94,7 @@ spec:
   namespaceSelector:
     matchNames: [istio-system]
   podMetricsEndpoints:
-    - port: metrics
+    - port: ztunnel-stats
       path: /metrics
       interval: {{ .Values.scrapeInterval }}
 {{- end }}
