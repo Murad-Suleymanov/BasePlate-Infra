@@ -78,3 +78,43 @@ spec:
       path: /metrics
       interval: {{ .Values.scrapeInterval }}
 {{- end }}
+---
+{{- if .Values.serviceMonitors.ztunnel.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: ztunnel
+  namespace: istio-system
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: ztunnel
+  namespaceSelector:
+    matchNames: [istio-system]
+  podMetricsEndpoints:
+    - port: metrics
+      path: /metrics
+      interval: {{ .Values.scrapeInterval }}
+{{- end }}
+---
+{{- if .Values.serviceMonitors.waypoint.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: waypoint
+  namespace: istio-system
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      gateway.istio.io/managed: istio.io-mesh-controller
+  namespaceSelector:
+    any: true
+  podMetricsEndpoints:
+    - port: http-envoy-prom
+      path: /stats/prometheus
+      interval: {{ .Values.scrapeInterval }}
+{{- end }}

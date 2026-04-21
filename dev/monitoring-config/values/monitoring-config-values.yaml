@@ -62,5 +62,9 @@ serviceMonitors:
     enabled: true
   jaeger:
     enabled: true
+  ztunnel:
+    enabled: true
+  waypoint:
+    enabled: true
 
 extraServiceMonitors: []
