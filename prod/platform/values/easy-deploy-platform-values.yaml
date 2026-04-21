@@ -52,6 +52,10 @@ operator:
       containerPort: 9090
   extraPorts: []
 
+  terminationGracePeriodSeconds: 30
+  lifecycle:
+    preStopSleepSeconds: 5
+
   probes:
     liveness:
       enabled: true
