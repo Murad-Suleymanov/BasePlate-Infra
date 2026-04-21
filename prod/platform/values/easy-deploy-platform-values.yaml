@@ -1,10 +1,15 @@
 name: easy-deploy-operator
 
+istio:
+  enabled: true
+
 operator:
   containerName: manager
   image: ghcr.io/murad-suleymanov/easy-deploy-operator:a95f8370fdafbc0d0f4b8592b48cf74bd6e55a74
   imagePullPolicy: Always
   replicas: 1
+  imagePullSecrets:
+    - ghcr-secret
 
   args:
     metricsBindAddress:
