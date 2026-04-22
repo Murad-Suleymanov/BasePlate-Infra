@@ -1,0 +1,60 @@
+apiVersion: audit.k8s.io/v1
+kind: Policy
+omitStages:
+  - RequestReceived
+rules:
+  # Skip health/readiness/metrics noise
+  - level: None
+    nonResourceURLs:
+      - /healthz*
+      - /readyz*
+      - /livez*
+      - /metrics
+      - /version
+      - /swagger*
+      - /openapi*
+
+  # Skip noisy list/watch from system components on benign resources
+  - level: None
+    verbs: ["watch", "list"]
+    users:
+      - system:kube-scheduler
+      - system:kube-controller-manager
+    userGroups:
+      - system:nodes
+    resources:
+      - group: ""
+        resources: ["endpoints", "configmaps", "events", "nodes", "pods",
+                    "replicationcontrollers", "serviceaccounts", "services"]
+      - group: "apps"
+        resources: ["daemonsets", "deployments", "replicasets", "statefulsets"]
+
+  # Secrets and ConfigMaps — full request+response body
+  - level: RequestResponse
+    resources:
+      - group: ""
+        resources: ["secrets", "configmaps"]
+
+  # Pod exec / attach / portforward — full request+response
+  - level: RequestResponse
+    resources:
+      - group: ""
+        resources: ["pods/exec", "pods/attach", "pods/portforward"]
+
+  # RBAC changes — full request+response
+  - level: RequestResponse
+    resources:
+      - group: "rbac.authorization.k8s.io"
+
+  # TokenReview and SubjectAccessReview — full request+response
+  - level: RequestResponse
+    resources:
+      - group: "authentication.k8s.io"
+      - group: "authorization.k8s.io"
+
+  # All writes — capture request body
+  - level: Request
+    verbs: ["create", "update", "patch", "delete", "deletecollection"]
+
+  # Default: metadata only for everything else
+  - level: Metadata

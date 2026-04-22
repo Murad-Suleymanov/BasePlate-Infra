@@ -6,17 +6,23 @@
 #   K8S_VERSION=1.30
 #   POD_CIDR=192.168.0.0/16
 #   APISERVER_ADVERTISE_ADDRESS=1.2.3.4
-#   SKIP_CNI=1          — only kubeadm init + kubeconfig (node stays NotReady)
-#   REMOVE_CP_TAINT=1   — allow scheduling on control-plane (single-node dev)
+#   SKIP_CNI=1                              — only kubeadm init + kubeconfig (node stays NotReady)
+#   REMOVE_CP_TAINT=1                       — allow scheduling on control-plane (single-node dev)
+#   AUDIT_POLICY_DIR=/etc/kubernetes/audit  — where audit-policy.yaml is installed
+#   AUDIT_LOG_DIR=/var/log/kubernetes/audit — where kube-apiserver writes audit.log
 
 set -euo pipefail
 
 [[ "${EUID:-$(id -u)}" -eq 0 ]] || { echo "Run as root: sudo $0" >&2; exit 1; }
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 export DEBIAN_FRONTEND=noninteractive
 K8S_VERSION="${K8S_VERSION:-1.30}"
 POD_CIDR="${POD_CIDR:-192.168.0.0/16}"
 CALICO_VERSION="${CALICO_VERSION:-v3.28.1}"
+AUDIT_POLICY_DIR="${AUDIT_POLICY_DIR:-/etc/kubernetes/audit}"
+AUDIT_LOG_DIR="${AUDIT_LOG_DIR:-/var/log/kubernetes/audit}"
 
 echo "=== 1) OS / kernel ==="
 apt-get update -y
@@ -53,14 +59,52 @@ apt-get update -y
 apt-get install -y kubelet kubeadm kubectl
 apt-mark hold kubelet kubeadm kubectl 2>/dev/null || true
 
-echo "=== 4) kubeadm init ==="
+echo "=== 4) kubeadm init (with audit logging) ==="
 if [[ -f /etc/kubernetes/admin.conf ]]; then
   echo "Already inited (/etc/kubernetes/admin.conf exists). Exit or kubeadm reset first."
   exit 1
 fi
-INIT=(kubeadm init "--pod-network-cidr=${POD_CIDR}")
-[[ -n "${APISERVER_ADVERTISE_ADDRESS:-}" ]] && INIT+=(--apiserver-advertise-address="${APISERVER_ADVERTISE_ADDRESS}")
-"${INIT[@]}"
+
+policy_src="${SCRIPT_DIR}/audit-policy.yaml"
+[[ -f "${policy_src}" ]] || { echo "ERROR: Missing ${policy_src} — cannot configure audit logging." >&2; exit 1; }
+mkdir -p "${AUDIT_POLICY_DIR}" "${AUDIT_LOG_DIR}"
+cp "${policy_src}" "${AUDIT_POLICY_DIR}/audit-policy.yaml"
+
+kubeadm_cfg="$(mktemp /tmp/kubeadm-config-XXXXXX.yaml)"
+trap "rm -f '${kubeadm_cfg}'" EXIT
+
+cat > "${kubeadm_cfg}" <<KCFG
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: "${APISERVER_ADVERTISE_ADDRESS:-}"
+  bindPort: 6443
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+networking:
+  podSubnet: "${POD_CIDR}"
+apiServer:
+  extraArgs:
+    audit-policy-file: ${AUDIT_POLICY_DIR}/audit-policy.yaml
+    audit-log-path: ${AUDIT_LOG_DIR}/audit.log
+    audit-log-maxage: "30"
+    audit-log-maxbackup: "10"
+    audit-log-maxsize: "100"
+  extraVolumes:
+    - name: audit-policy
+      hostPath: ${AUDIT_POLICY_DIR}
+      mountPath: ${AUDIT_POLICY_DIR}
+      readOnly: true
+      pathType: DirectoryOrCreate
+    - name: audit-log
+      hostPath: ${AUDIT_LOG_DIR}
+      mountPath: ${AUDIT_LOG_DIR}
+      readOnly: false
+      pathType: DirectoryOrCreate
+KCFG
+
+kubeadm init --config "${kubeadm_cfg}"
 
 mkdir -p /root/.kube
 cp -f /etc/kubernetes/admin.conf /root/.kube/config
@@ -69,6 +113,7 @@ if [[ -n "${SUDO_USER:-}" && -d "/home/${SUDO_USER}" ]]; then
   install -m 0600 -o "${SUDO_USER}" -g "${SUDO_USER}" /etc/kubernetes/admin.conf "/home/${SUDO_USER}/.kube/config"
 fi
 export KUBECONFIG=/etc/kubernetes/admin.conf
+echo "Audit logs → ${AUDIT_LOG_DIR}/audit.log"
 
 kubeadm token create --print-join-command | tee /root/kubeadm-join.sh >/dev/null
 chmod 600 /root/kubeadm-join.sh

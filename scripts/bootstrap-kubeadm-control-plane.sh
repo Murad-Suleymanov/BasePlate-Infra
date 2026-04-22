@@ -22,6 +22,8 @@
 #   APISERVER_ADVERTISE_ADDRESS= — passed to kubeadm init when set
 #   REMOVE_CONTROL_PLANE_TAINT=1 — single-node / dev: allow pods on control-plane
 #   SKIP_ADDONS=1            — with `all`, skip addons phase
+#   AUDIT_POLICY_DIR=/etc/kubernetes/audit  — where audit-policy.yaml is installed
+#   AUDIT_LOG_DIR=/var/log/kubernetes/audit — where kube-apiserver writes audit.log
 #
 # After `init`, join line is saved to JOIN_CMD_FILE (default /root/kubeadm-join.sh). Workers: see scripts/bootstrap-kubeadm-worker.sh
 
@@ -96,12 +98,51 @@ phase_init() {
   need_root
   [[ -f /etc/kubernetes/admin.conf ]] && die "Already initialized (/etc/kubernetes/admin.conf exists). Skip init or reset cluster."
 
-  INIT_ARGS=(init "--pod-network-cidr=${POD_CIDR}")
-  if [[ -n "${APISERVER_ADVERTISE_ADDRESS:-}" ]]; then
-    INIT_ARGS+=(--apiserver-advertise-address="${APISERVER_ADVERTISE_ADDRESS}")
-  fi
+  local audit_policy_dir="${AUDIT_POLICY_DIR:-/etc/kubernetes/audit}"
+  local audit_log_dir="${AUDIT_LOG_DIR:-/var/log/kubernetes/audit}"
+  local policy_src="${SCRIPT_DIR}/audit-policy.yaml"
+  [[ -f "${policy_src}" ]] || die "Missing ${policy_src} — cannot configure audit logging."
 
-  kubeadm "${INIT_ARGS[@]}"
+  mkdir -p "${audit_policy_dir}" "${audit_log_dir}"
+  cp "${policy_src}" "${audit_policy_dir}/audit-policy.yaml"
+
+  local kubeadm_cfg
+  kubeadm_cfg="$(mktemp /tmp/kubeadm-config-XXXXXX.yaml)"
+  # shellcheck disable=SC2064
+  trap "rm -f '${kubeadm_cfg}'" EXIT
+
+  cat > "${kubeadm_cfg}" <<KCFG
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: "${APISERVER_ADVERTISE_ADDRESS:-}"
+  bindPort: 6443
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+networking:
+  podSubnet: "${POD_CIDR}"
+apiServer:
+  extraArgs:
+    audit-policy-file: ${audit_policy_dir}/audit-policy.yaml
+    audit-log-path: ${audit_log_dir}/audit.log
+    audit-log-maxage: "30"
+    audit-log-maxbackup: "10"
+    audit-log-maxsize: "100"
+  extraVolumes:
+    - name: audit-policy
+      hostPath: ${audit_policy_dir}
+      mountPath: ${audit_policy_dir}
+      readOnly: true
+      pathType: DirectoryOrCreate
+    - name: audit-log
+      hostPath: ${audit_log_dir}
+      mountPath: ${audit_log_dir}
+      readOnly: false
+      pathType: DirectoryOrCreate
+KCFG
+
+  kubeadm init --config "${kubeadm_cfg}"
 
   local kube_home="/root/.kube"
   if [[ -n "${SUDO_USER:-}" && -d "/home/${SUDO_USER}" ]]; then
@@ -118,7 +159,7 @@ phase_init() {
   kubeadm token create --print-join-command | tee "${JOIN_CMD_FILE}" >/dev/null
   chmod 600 "${JOIN_CMD_FILE}" 2>/dev/null || true
   echo "Join command saved: ${JOIN_CMD_FILE}"
-  echo "OK: phase init"
+  echo "OK: phase init (audit logs → ${audit_log_dir}/audit.log)"
 }
 
 phase_cni() {
