@@ -10,3 +10,23 @@ spec:
         - name: zipkin
       randomSamplingPercentage: {{ .Values.tracing.samplingRate }}
 {{- end }}
+---
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: waypoint-metrics
+  namespace: istio-system
+spec:
+  metrics:
+    - providers:
+        - name: prometheus
+      overrides:
+        - match:
+            metric: REQUEST_DURATION
+          disabled: false
+        - match:
+            metric: REQUEST_SIZE
+          disabled: false
+        - match:
+            metric: RESPONSE_SIZE
+          disabled: false
