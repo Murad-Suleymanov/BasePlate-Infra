@@ -19,6 +19,7 @@ meshConfig:
       ports:
         - 8080
         - 8081
+        - 9090
 
 tracing:
   enabled: true
