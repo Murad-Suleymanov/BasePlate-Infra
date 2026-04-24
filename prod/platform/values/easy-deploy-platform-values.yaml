@@ -255,6 +255,43 @@ crd:
         path:
           type: string
           description: "Metrics HTTP path, default /metrics"
+    canary:
+      type: object
+      description: "Canary deployment with weighted HTTPRoute traffic splitting."
+      properties:
+        enabled:
+          type: boolean
+        weight:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+        image:
+          type: string
+        tag:
+          type: string
+    traffic:
+      type: object
+      description: "Service mesh traffic policies."
+      properties:
+        provider:
+          type: string
+        rateLimit:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+            mode:
+              type: string
+            local:
+              type: object
+              properties:
+                requestsPerSecond:
+                  type: integer
+                  format: int32
+                burst:
+                  type: integer
+                  format: int32
   statusProperties:
     availableReplicas:
       type: integer
@@ -266,4 +303,8 @@ crd:
     buildTag:
       type: string
     lastRebuild:
+      type: string
+    stableTag:
+      type: string
+    canaryImage:
       type: string
