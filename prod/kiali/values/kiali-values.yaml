@@ -25,6 +25,9 @@ server:
   web_port: 443
   web_schema: https
 
+kiali_feature_flags:
+  ambient_enabled: true
+
 external_services:
   prometheus:
     url: http://monitoring-kube-prometheus-prometheus.monitoring:9090
