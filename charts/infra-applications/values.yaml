@@ -254,12 +254,6 @@ applications:
     valuesPath: kiali/values/kiali-values.yaml
     syncOptions:
       - CreateNamespace=true
-      - RespectIgnoreDifferences=true
-    ignoreDifferences:
-      - kind: ConfigMap
-        name: kiali
-        jsonPointers:
-          - /data
 
   jaeger:
     enabled: true
