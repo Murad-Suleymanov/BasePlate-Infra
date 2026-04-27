@@ -34,6 +34,12 @@ spec:
       destination:
         server: {{ $.Values.destinationServer }}
         namespace: '{{ "{{" }} .path.path {{ "}}" }}'
+      ignoreDifferences:
+        - group: deploy.easydeploy.io
+          kind: BirService
+          jsonPointers:
+            - /spec/containerPort
+            - /spec/imageTag
       syncPolicy:
 {{- toYaml $appSet.syncPolicy | nindent 8 }}
 {{- end }}
