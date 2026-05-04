@@ -132,6 +132,11 @@ rbac:
         apiGroups: ["monitoring.coreos.com"]
         resources: ["servicemonitors"]
         verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+      poddisruptionbudgets:
+        enabled: true
+        apiGroups: ["policy"]
+        resources: ["poddisruptionbudgets"]
+        verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
     extraRules: []
   clusterRoleBinding:
     name: easy-deploy-operator
@@ -288,6 +293,20 @@ crd:
                 burst:
                   type: integer
                   format: int32
+    strategy:
+      type: object
+      description: "Deployment update strategy. Defaults to RollingUpdate (maxUnavailable=0, maxSurge=25%)."
+      properties:
+        type:
+          type: string
+          enum: ["RollingUpdate", "Recreate"]
+          description: "RollingUpdate (default) or Recreate (kill-all then start-all; required for stateful/singleton apps)."
+        maxSurge:
+          x-kubernetes-int-or-string: true
+          description: "Max pods above desired during rolling update. Default 25%. Ignored for Recreate."
+        maxUnavailable:
+          x-kubernetes-int-or-string: true
+          description: "Max pods unavailable during rolling update. Default 0. Ignored for Recreate."
   statusProperties:
     availableReplicas:
       type: integer
