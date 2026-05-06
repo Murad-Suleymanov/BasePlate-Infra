@@ -1,0 +1,65 @@
+{{- if .Values.minio.consoleHostname }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: minio-console-route
+  namespace: {{ .Values.namespace }}
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.minio.consoleHostname }}
+    external-dns.alpha.kubernetes.io/target: {{ .Values.targetIP }}
+spec:
+  parentRefs:
+{{- range .Values.route.sections }}
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ $.Values.gateway.name }}
+      namespace: {{ $.Values.gateway.namespace }}
+      sectionName: {{ . }}
+{{- end }}
+  hostnames:
+    - {{ .Values.minio.consoleHostname | quote }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: {{ .Values.minio.consoleService }}
+          port: {{ .Values.minio.consolePort }}
+          weight: 1
+{{- end }}
+{{- if .Values.minio.apiHostname }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: minio-api-route
+  namespace: {{ .Values.namespace }}
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.minio.apiHostname }}
+    external-dns.alpha.kubernetes.io/target: {{ .Values.targetIP }}
+spec:
+  parentRefs:
+{{- range .Values.route.sections }}
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ $.Values.gateway.name }}
+      namespace: {{ $.Values.gateway.namespace }}
+      sectionName: {{ . }}
+{{- end }}
+  hostnames:
+    - {{ .Values.minio.apiHostname | quote }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: {{ .Values.minio.apiService }}
+          port: {{ .Values.minio.apiPort }}
+          weight: 1
+{{- end }}

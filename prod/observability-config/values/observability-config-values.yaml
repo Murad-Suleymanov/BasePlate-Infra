@@ -1,5 +1,22 @@
 namespace: observability
 
+targetIP: "178.104.84.100"
+
+gateway:
+  name: main-gateway
+  namespace: nginx-gateway
+
+route:
+  sections: [http, https]
+
+minio:
+  consoleHostname: minio.easysolution.work
+  consoleService: minio-console
+  consolePort: 9001
+  apiHostname: s3.easysolution.work
+  apiService: minio
+  apiPort: 9000
+
 instrumentation:
   name: default
   exporterEndpoint: http://otel-collector.observability.svc.cluster.local:4318
