@@ -42,3 +42,12 @@ letsencrypt:
     accountKeySecret: letsencrypt-staging-account-key
 
 extraCertificates: []
+
+tracing:
+  enabled: true
+  policyName: tracing-main-gateway
+  strategy: ratio
+  ratio: 100
+  spanAttributes:
+    - key: deployment.environment
+      value: dev
