@@ -7,13 +7,14 @@ nginx:
         containerPort: 443
   service:
     type: ClusterIP
-  telemetry:
-    exporter:
-      endpoint: otel-collector-opentelemetry-collector.observability.svc.cluster.local:4317
-      interval: 5s
-      batchSize: 100
-      batchCount: 1
-    serviceName: ngf-dev
-    spanAttributes:
-      - key: deployment.environment
-        value: dev
+  config:
+    telemetry:
+      exporter:
+        endpoint: otel-collector-opentelemetry-collector.observability.svc.cluster.local:4317
+        interval: 5s
+        batchSize: 100
+        batchCount: 1
+      serviceName: ngf-dev
+      spanAttributes:
+        - key: deployment.environment
+          value: dev
