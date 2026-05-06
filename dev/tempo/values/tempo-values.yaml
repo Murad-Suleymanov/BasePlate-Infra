@@ -1,6 +1,6 @@
 tempo:
   extraArgs:
-    - "-config.expand-env=true"
+    config.expand-env: "true"
   extraEnv:
     - name: TEMPO_S3_ACCESS_KEY
       valueFrom:
