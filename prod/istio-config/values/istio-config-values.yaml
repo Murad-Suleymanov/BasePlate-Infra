@@ -1,6 +1,6 @@
 targetIP: "116.203.203.121"
 kialiHostname: kiali.easysolution.work
-jaegerHostname: jaeger.easysolution.work
+jaegerHostname: ""
 
 gateway:
   name: main-gateway
@@ -29,6 +29,6 @@ route:
   sections: [http, https]
 
 oauth2Proxy:
-  enabled: true
-  issuerUrl: https://keycloak.easysolution.work/realms/istio
+  enabled: false
+  issuerUrl: ""
   clientId: jaeger-proxy

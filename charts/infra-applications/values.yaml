@@ -256,7 +256,7 @@ applications:
       - CreateNamespace=true
 
   jaeger:
-    enabled: true
+    enabled: false
     destinationNamespace: istio-system
     source:
       repoURL: https://jaegertracing.github.io/helm-charts
@@ -267,3 +267,69 @@ applications:
     valuesPath: jaeger/values/jaeger-values.yaml
     syncOptions:
       - CreateNamespace=true
+
+  minio:
+    enabled: true
+    destinationNamespace: observability
+    source:
+      repoURL: https://charts.min.io/
+      chart: minio
+      targetRevision: "5.4.0"
+      helm:
+        releaseName: minio
+    valuesPath: minio/values/minio-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+
+  tempo:
+    enabled: true
+    destinationNamespace: observability
+    source:
+      repoURL: https://grafana.github.io/helm-charts
+      chart: tempo
+      targetRevision: "1.21.1"
+      helm:
+        releaseName: tempo
+    valuesPath: tempo/values/tempo-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+
+  opentelemetry-operator:
+    enabled: true
+    destinationNamespace: opentelemetry-operator-system
+    source:
+      repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+      chart: opentelemetry-operator
+      targetRevision: "0.74.0"
+      helm:
+        releaseName: opentelemetry-operator
+    valuesPath: opentelemetry-operator/values/opentelemetry-operator-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+
+  opentelemetry-collector:
+    enabled: true
+    destinationNamespace: observability
+    source:
+      repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+      chart: opentelemetry-collector
+      targetRevision: "0.108.0"
+      helm:
+        releaseName: otel-collector
+    valuesPath: opentelemetry-collector/values/opentelemetry-collector-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+
+  observability-config:
+    enabled: true
+    destinationNamespace: observability
+    source:
+      path: charts/observability-config
+      helm:
+        releaseName: observability-config
+    valuesPath: observability-config/values/observability-config-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

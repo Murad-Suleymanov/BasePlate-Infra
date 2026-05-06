@@ -1,0 +1,27 @@
+mode: standalone
+replicas: 1
+
+existingSecret: minio-creds
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+persistence:
+  enabled: true
+  storageClass: local-path
+  size: 100Gi
+
+buckets:
+  - name: tempo
+    policy: none
+    purge: false
+
+ingress:
+  enabled: false
+consoleIngress:
+  enabled: false

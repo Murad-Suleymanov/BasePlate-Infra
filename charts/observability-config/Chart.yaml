@@ -1,0 +1,5 @@
+apiVersion: v2
+name: observability-config
+description: Cluster-wide OpenTelemetry Instrumentation CR + observability namespace
+version: 1.0.0
+type: application

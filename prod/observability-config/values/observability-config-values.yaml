@@ -1,0 +1,16 @@
+namespace: observability
+
+instrumentation:
+  name: default
+  exporterEndpoint: http://otel-collector.observability.svc.cluster.local:4318
+  samplingRatio: "0.1"
+  propagators:
+    - tracecontext
+    - baggage
+    - b3
+  images:
+    java: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest
+    python: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:latest
+    nodejs: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest
+    dotnet: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:latest
+    go: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-go:latest

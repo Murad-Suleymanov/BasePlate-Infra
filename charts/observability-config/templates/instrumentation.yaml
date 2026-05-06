@@ -1,0 +1,25 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: {{ .Values.instrumentation.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  exporter:
+    endpoint: {{ .Values.instrumentation.exporterEndpoint | quote }}
+  propagators:
+{{- range .Values.instrumentation.propagators }}
+    - {{ . }}
+{{- end }}
+  sampler:
+    type: parentbased_traceidratio
+    argument: {{ .Values.instrumentation.samplingRatio | quote }}
+  java:
+    image: {{ .Values.instrumentation.images.java | quote }}
+  python:
+    image: {{ .Values.instrumentation.images.python | quote }}
+  nodejs:
+    image: {{ .Values.instrumentation.images.nodejs | quote }}
+  dotnet:
+    image: {{ .Values.instrumentation.images.dotnet | quote }}
+  go:
+    image: {{ .Values.instrumentation.images.go | quote }}

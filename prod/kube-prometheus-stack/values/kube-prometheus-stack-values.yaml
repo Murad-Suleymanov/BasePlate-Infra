@@ -31,6 +31,21 @@ grafana:
     enabled: true
     storageClassName: local-path
     size: 2Gi
+  additionalDataSources:
+    - name: Tempo
+      type: tempo
+      access: proxy
+      url: http://tempo.observability.svc.cluster.local:3100
+      uid: tempo
+      jsonData:
+        nodeGraph:
+          enabled: true
+        serviceMap:
+          datasourceUid: prometheus
+        search:
+          hide: false
+        tracesToLogsV2:
+          datasourceUid: prometheus
 
 prometheus:
   enabled: true
