@@ -13,8 +13,8 @@ pilot:
 meshConfig:
   accessLogFile: /dev/stdout
   enableTracing: true
-  defaultConfig:
-    tracing:
+  extensionProviders:
+    - name: zipkin
       zipkin:
-        address: otel-collector-opentelemetry-collector.observability.svc.cluster.local:9411
-      sampling: 10.0
+        service: otel-collector-opentelemetry-collector.observability.svc.cluster.local
+        port: 9411
