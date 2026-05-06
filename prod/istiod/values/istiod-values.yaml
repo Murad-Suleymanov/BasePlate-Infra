@@ -16,5 +16,5 @@ meshConfig:
   defaultConfig:
     tracing:
       zipkin:
-        address: otel-collector.observability.svc.cluster.local:9411
+        address: otel-collector-opentelemetry-collector.observability.svc.cluster.local:9411
       sampling: 10.0

@@ -19,7 +19,7 @@ minio:
 
 instrumentation:
   name: default
-  exporterEndpoint: http://otel-collector.observability.svc.cluster.local:4318
+  exporterEndpoint: http://otel-collector-opentelemetry-collector.observability.svc.cluster.local:4318
   samplingRatio: "1.0"
   propagators:
     - tracecontext
