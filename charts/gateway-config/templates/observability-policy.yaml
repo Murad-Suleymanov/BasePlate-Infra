@@ -1,21 +1,24 @@
 {{- if .Values.tracing.enabled }}
+{{- range .Values.tracing.staticRoutes }}
+---
 apiVersion: gateway.nginx.org/v1alpha2
 kind: ObservabilityPolicy
 metadata:
-  name: {{ .Values.tracing.policyName }}
-  namespace: {{ .Values.gateway.namespace }}
+  name: {{ printf "%s-tracing" .name }}
+  namespace: {{ .namespace }}
 spec:
   targetRefs:
     - group: gateway.networking.k8s.io
-      kind: Gateway
-      name: {{ .Values.gateway.name }}
+      kind: HTTPRoute
+      name: {{ .name }}
   tracing:
-    strategy: {{ .Values.tracing.strategy }}
-{{- if eq .Values.tracing.strategy "ratio" }}
-    ratio: {{ .Values.tracing.ratio }}
+    strategy: {{ $.Values.tracing.strategy }}
+{{- if eq $.Values.tracing.strategy "ratio" }}
+    ratio: {{ $.Values.tracing.ratio }}
 {{- end }}
-{{- if .Values.tracing.spanAttributes }}
+{{- if $.Values.tracing.spanAttributes }}
     spanAttributes:
-{{- toYaml .Values.tracing.spanAttributes | nindent 6 }}
+{{- toYaml $.Values.tracing.spanAttributes | nindent 6 }}
+{{- end }}
 {{- end }}
 {{- end }}

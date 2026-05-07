@@ -45,9 +45,27 @@ extraCertificates: []
 
 tracing:
   enabled: true
-  policyName: tracing-main-gateway
   strategy: ratio
   ratio: 100
   spanAttributes:
     - key: deployment.environment
       value: dev
+  # Static (non-BirService) HTTPRoutes that need OTel tracing.
+  # BirService routes get policies from the operator automatically.
+  staticRoutes:
+    - name: argocd-route
+      namespace: argocd
+    - name: webhook-route
+      namespace: easy-deploy-system
+    - name: kiali-route
+      namespace: istio-system
+    - name: grafana-route
+      namespace: monitoring
+    - name: minio-api-route
+      namespace: observability
+    - name: minio-console-route
+      namespace: observability
+    - name: registry-route
+      namespace: registry
+    - name: registry-ui-route
+      namespace: registry

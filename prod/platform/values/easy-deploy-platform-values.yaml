@@ -36,6 +36,9 @@ operator:
     webhookURL:
       enabled: true
       value: "https://webhook.easysolution.work"
+    tracingRatio:
+      enabled: true
+      value: "10"
   extraEnv: []
 
   envFrom:
