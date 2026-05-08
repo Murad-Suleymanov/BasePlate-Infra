@@ -38,7 +38,7 @@ operator:
       value: "https://webhook.easysolution.work"
     tracingRatio:
       enabled: true
-      value: "10"
+      value: "100"
   extraEnv: []
 
   envFrom:
