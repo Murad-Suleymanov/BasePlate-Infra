@@ -9,13 +9,13 @@ INSTALL_DIR="/opt/keycloak"
 echo "=== Installing Keycloak ${KEYCLOAK_VERSION} ==="
 
 if ! java -version 2>&1 | grep -q "21"; then
-  echo "--- Java 21 tapılmadı, quraşdırılır..."
+  echo "--- Java 21 not found, installing..."
   apt-get update && apt-get install -y openjdk-21-jdk-headless
 fi
 
 if [ -d "${INSTALL_DIR}" ]; then
-  echo "ERROR: ${INSTALL_DIR} artıq mövcuddur."
-  echo "       Sıfırdan qurmaq üçün əvvəlcə sil: rm -rf ${INSTALL_DIR}"
+  echo "ERROR: ${INSTALL_DIR} already exists."
+  echo "       Remove it first for a clean install: rm -rf ${INSTALL_DIR}"
   exit 1
 fi
 
@@ -110,17 +110,17 @@ nginx -t
 systemctl enable nginx
 if systemctl is-active --quiet nginx; then
   systemctl reload nginx
-  echo "Nginx reloaded (keycloak bloku əlavə edildi)"
+  echo "Nginx reloaded (keycloak block added)"
 else
   systemctl start nginx
   echo "Nginx started"
 fi
 
 echo ""
-echo "=== Keycloak ${KEYCLOAK_VERSION} quraşdırıldı ==="
+echo "=== Keycloak ${KEYCLOAK_VERSION} installed ==="
 echo "URL:     https://${KEYCLOAK_HOSTNAME}"
 echo "Admin:   admin / ${ADMIN_PASSWORD}"
 echo "Logs:    journalctl -u keycloak -f"
 echo ""
-echo "Keycloak tam başlayana qədər ~40 saniyə gözlə, sonra:"
+echo "Wait ~40 seconds for Keycloak to fully start, then:"
 echo "  bash configure-clients.sh ${KEYCLOAK_HOSTNAME} <admin-pass> <kiali-host> <jaeger-host>"

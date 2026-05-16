@@ -1,13 +1,13 @@
 # Pipeline Injection — Developer Repo → GitHub Actions + Secrets
 
-Developer BasePlate-Dev-da `repo: https://github.com/user/repo` yazanda, operator avtomatik:
+When a developer writes `repo: https://github.com/user/repo` in BasePlate-Dev, the operator automatically:
 
-1. **Pipeline** — `.github/workflows/build-push.yaml` faylını repo-ya əlavə edir
-2. **Secrets** — `REGISTRY_USERNAME` və `REGISTRY_PASSWORD` GitHub Actions secret kimi əlavə edir
+1. **Pipeline** — adds a `.github/workflows/build-push.yaml` file to the repo.
+2. **Secrets** — adds `REGISTRY_USERNAME` and `REGISTRY_PASSWORD` as GitHub Actions secrets.
 
-## Nə inject olunur
+## What gets injected
 
-### 1. Workflow faylı (`.github/workflows/build-push.yaml`)
+### 1. Workflow file (`.github/workflows/build-push.yaml`)
 
 ```yaml
 name: Build & Push to Easy Deploy Registry
@@ -34,52 +34,52 @@ jobs:
 
 ### 2. GitHub Actions Secrets
 
-| Secret             | Məna                    | Dəyər (nümunə) |
+| Secret             | Meaning                | Example value   |
 |--------------------|------------------------|-----------------|
 | REGISTRY_USERNAME  | Registry login         | admin           |
-| REGISTRY_PASSWORD  | Registry şifrə         | EasyDeploy2026  |
+| REGISTRY_PASSWORD  | Registry password      | EasyDeploy2026  |
 
-Secrets görünməz — GitHub Settings → Secrets and variables → Actions-da yalnız adları görünür.
+Secrets are write-only — GitHub Settings → Secrets and variables → Actions shows only the names, never the values.
 
 ## Prerequisite: github-pipeline-secret
 
-Operator pipeline inject etmək üçün `GITHUB_TOKEN` lazımdır. Token `github-pipeline-secret`-dən gəlir:
+The operator needs a `GITHUB_TOKEN` to inject the pipeline. The token comes from `github-pipeline-secret`:
 
 ```bash
-# Bir dəfə — yeni cluster və ya token yeniləmək üçün
+# One-time — on a new cluster or when rotating the token
 GITHUB_TOKEN=ghp_xxx ./scripts/bootstrap-pipeline-secret.sh
 
-# Operator restart — secret env olaraq yüklənsin
+# Restart the operator so it picks the secret up as an env var
 kubectl -n easy-deploy-system rollout restart deployment easy-deploy-operator
 ```
 
-**GITHUB_TOKEN scope:** `repo` (full) və ya fine-grained: `Contents: Read and write`, `Secrets: Read and write`
+**Required `GITHUB_TOKEN` scope:** `repo` (full) or fine-grained: `Contents: Read and write`, `Secrets: Read and write`.
 
-## Yoxlama
+## Verification
 
 ```bash
-# 1. Secret var?
+# 1. Secret present?
 kubectl -n easy-deploy-system get secret github-pipeline-secret
 
-# 2. Operator logs — injection uğurlu?
+# 2. Operator logs — was injection successful?
 kubectl -n easy-deploy-system logs deployment/easy-deploy-operator --tail=50 | grep -i pipeline
 
-# Uğurlu: "pipeline injected" repo=...
-# Uğursuz: "pipeline injection failed" — GITHUB_TOKEN yoxdur və ya yetki azdır
+# Success: "pipeline injected" repo=...
+# Failure: "pipeline injection failed" — GITHUB_TOKEN missing or insufficient permissions
 
-# 3. Repoda .github/workflows/build-push.yaml var?
+# 3. Workflow file in the tenant repo?
 # GitHub → repo → Code → .github/workflows/
 
 # 4. GitHub Actions Secrets
 # Repo → Settings → Secrets and variables → Actions
-# REGISTRY_USERNAME, REGISTRY_PASSWORD görünməlidir
+# REGISTRY_USERNAME, REGISTRY_PASSWORD should be listed
 ```
 
-## Injection uğursuzdursa — yenidən cəhd
+## Re-running a failed injection
 
-BirService-də `deploy.easydeploy.io/pipeline-injected: "true"` yanlış qoyulubsa və ya token düzəldildikdən sonra:
+If the BirService is incorrectly marked with `deploy.easydeploy.io/pipeline-injected: "true"`, or you've just fixed the token:
 
 ```bash
-# Annotation sil — operator yenidən inject cəhd edəcək
+# Remove the annotation — the operator will retry injection on next reconcile
 kubectl -n loadtest annotate birservice hello-csharp deploy.easydeploy.io/pipeline-injected-
 ```

@@ -7,7 +7,7 @@ VAULT_ADDR="${1:?Usage: $0 <vault-addr> [vault-token]}"
 HEALTH=$(curl -sk "${VAULT_ADDR}/v1/sys/health" -o /dev/null -w "%{http_code}" 2>/dev/null || echo "000")
 
 if [ "$HEALTH" = "000" ]; then
-  echo "Vault-a qoşulmaq mümkün olmadı: ${VAULT_ADDR}"
+  echo "Unable to reach Vault: ${VAULT_ADDR}"
   exit 1
 fi
 
@@ -33,7 +33,7 @@ kv_put() {
 
 # 501 = not initialized, 200/429/473 = initialized
 if [ "$HEALTH" = "501" ]; then
-  echo "=== Vault initialized deyil, init edilir ==="
+  echo "=== Vault is not initialized, initializing now ==="
   INIT_RESPONSE=$(curl -sk -X PUT "${VAULT_ADDR}/v1/sys/init" \
     -H "Content-Type: application/json" \
     -d '{"secret_shares": 3, "secret_threshold": 2}')
@@ -57,14 +57,14 @@ if [ "$HEALTH" = "501" ]; then
   curl -sk -X PUT "${VAULT_ADDR}/v1/sys/unseal" -d "{\"key\": \"${UNSEAL_KEY_1}\"}" > /dev/null
   echo "Vault unsealed."
 else
-  echo "=== Vault artıq initialized olub ==="
-  ROOT_TOKEN="${2:-${VAULT_TOKEN:?Vault artıq init olub. Token lazımdır: $0 <vault-addr> <vault-token>}}"
+  echo "=== Vault is already initialized ==="
+  ROOT_TOKEN="${2:-${VAULT_TOKEN:?Vault is already initialized; a token is required: $0 <vault-addr> <vault-token>}}"
 fi
 
 export VAULT_TOKEN="$ROOT_TOKEN"
 
 echo "=== Enabling KV v2 ==="
-vault_api POST "sys/mounts/secret" '{"type": "kv", "options": {"version": "2"}}' && echo "KV v2 enabled" || echo "KV v2 artıq mövcuddur"
+vault_api POST "sys/mounts/secret" '{"type": "kv", "options": {"version": "2"}}' && echo "KV v2 enabled" || echo "KV v2 already exists"
 
 echo "=== Creating secret paths ==="
 
@@ -85,12 +85,12 @@ kv_put "dev/argocd"              "{\"admin.password\": \"CHANGE_ME_BCRYPT_HASH\"
 kv_put "dev/observability/minio"  '{"rootUser": "tempo", "rootPassword": "CHANGE_ME"}'
 
 echo "=== Enabling Kubernetes auth ==="
-vault_api POST "sys/auth/kubernetes-prod" '{"type": "kubernetes"}' && echo "kubernetes-prod auth enabled" || echo "kubernetes-prod auth artıq mövcuddur"
-vault_api POST "sys/auth/kubernetes-dev"  '{"type": "kubernetes"}' && echo "kubernetes-dev auth enabled"  || echo "kubernetes-dev auth artıq mövcuddur"
+vault_api POST "sys/auth/kubernetes-prod" '{"type": "kubernetes"}' && echo "kubernetes-prod auth enabled" || echo "kubernetes-prod auth already exists"
+vault_api POST "sys/auth/kubernetes-dev"  '{"type": "kubernetes"}' && echo "kubernetes-dev auth enabled"  || echo "kubernetes-dev auth already exists"
 
 echo ""
-echo "=== Vault hazırdır ==="
+echo "=== Vault is ready ==="
 echo "Next steps:"
-echo "  1. Unseal keys və root token-i təhlükəsiz saxla"
-echo "  2. Kubernetes auth endpoint-ləri konfiqurasiya et (configure-k8s-auth.sh)"
-echo "  3. Secret dəyərlərini real credential-larla yenilə"
+echo "  1. Store the unseal keys and root token securely."
+echo "  2. Configure the Kubernetes auth endpoints (configure-k8s-auth.sh)."
+echo "  3. Replace the placeholder secret values with real credentials."

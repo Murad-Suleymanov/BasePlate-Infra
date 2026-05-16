@@ -1,20 +1,20 @@
 # Easy Deploy Registry - Build & Push Pipeline
-# Repoya əlavə et: .github/workflows/build-push.yaml kopyala
+# Add to the repo: copy to .github/workflows/build-push.yaml
 #
-# GitHub repo Settings → Secrets əlavə et:
+# Add these GitHub repo Secrets (Settings → Secrets):
 #   REGISTRY_URL      = registry.easysolution.work
-#   REGISTRY_USERNAME = <registry user, məs: admin>
+#   REGISTRY_USERNAME = <registry user, e.g. admin>
 #   REGISTRY_PASSWORD = <registry password / token>
 #
-# Image adı: registry.easysolution.work/<REPO_NAME>:<tag>
-# Məs: github.com/org/todo-api → registry.easysolution.work/todo-api:abc1234
+# Image name: registry.easysolution.work/<REPO_NAME>:<tag>
+# Example: github.com/org/todo-api → registry.easysolution.work/todo-api:abc1234
 
 name: Build & Push to Easy Deploy Registry
 
 on:
   push:
     branches: [main, master]
-  # pull_request üçün yalnız build, push etmə:
+  # For pull_request: build only, do not push:
   # pull_request:
   #   branches: [main, master]
 

@@ -14,7 +14,7 @@ if [[ "$ENV" != "prod" && "$ENV" != "dev" ]]; then
 fi
 
 K8S_HOST="${3:?Usage: $0 <vault-addr> <prod|dev> <k8s-api-url>}"
-VAULT_TOKEN="${VAULT_TOKEN:?VAULT_TOKEN mütləq export olunmalıdır}"
+VAULT_TOKEN="${VAULT_TOKEN:?VAULT_TOKEN must be exported}"
 
 vault_api() {
   local method="$1" path="$2" data="${3:-}"
@@ -39,8 +39,8 @@ SA_JWT=$(kubectl get secret vault-auth-token -n vault-secrets-operator-system \
   -o jsonpath='{.data.token}' | base64 -d)
 
 if [ -z "$SA_JWT" ]; then
-  echo "ERROR: vault-auth-token secret tapılmadı və ya boşdur."
-  echo "       ArgoCD secrets-config chart-ı sync etməlidir (vault-auth-token.yaml)."
+  echo "ERROR: the vault-auth-token secret is missing or empty."
+  echo "       The ArgoCD secrets-config chart must be synced (vault-auth-token.yaml)."
   exit 1
 fi
 
@@ -77,5 +77,5 @@ EOJSON
 
 echo ""
 echo "=== Done ==="
-echo "VSO ${ENV} cluster-dən secret/${ENV}/* və secret/istio/* oxuya bilər."
+echo "VSO ${ENV} cluster can now read secret/${ENV}/* and secret/istio/*."
 echo "Token: long-lived (vault-auth-token Secret, expire olmur)"

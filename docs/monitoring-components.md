@@ -1,30 +1,30 @@
-# Sistem komponentləri — metrik və dashboard tələbləri
+# System components — metrics and dashboard requirements
 
-Hər run olunan sistem komponenti üçün:
-1. **Metrik** — Prometheus-un scrape edə biləcəyi `/metrics` və ya ekvivalent endpoint
-2. **ServiceMonitor/PodMonitor** — Prometheus-a "bu target-i scrape et" deyən resource
-3. **Grafana dashboard** — vizualizasiya
+For every system component we run:
+1. **Metric** — a `/metrics` (or equivalent) endpoint Prometheus can scrape
+2. **ServiceMonitor / PodMonitor** — the resource that tells Prometheus "scrape this target"
+3. **Grafana dashboard** — visualization
 
 ---
 
-## Platform komponentləri — cari vəziyyət
+## Platform components — current status
 
-| Komponent | Namespace | Metrik endpoint | ServiceMonitor | Dashboard |
-|-----------|-----------|-----------------|----------------|-----------|
+| Component | Namespace | Metrics endpoint | ServiceMonitor | Dashboard |
+|-----------|-----------|------------------|----------------|-----------|
 | **Easy-Deploy Operator** | easy-deploy-system | :8080/metrics | ✅ PodMonitor | ❌ |
-| **Registry** | registry | :5000/metrics (yoxdur) | ❌ | ❌ |
-| **Registry-UI** | registry | :80 (metrics yoxdur) | ❌ | ❌ |
-| **NGINX Gateway Fabric** | nginx-gateway | var (chart) | ✅ kube-prom | ✅ NGINX |
+| **Registry** | registry | :5000/metrics (n/a) | ❌ | ❌ |
+| **Registry-UI** | registry | :80 (no metrics) | ❌ | ❌ |
+| **NGINX Gateway Fabric** | nginx-gateway | exposed by chart | ✅ kube-prom | ✅ NGINX |
 | **ArgoCD** | argocd | :8082/metrics | ✅ kube-prom | ✅ ArgoCD |
-| **Prometheus** | monitoring | :9090/metrics | ✅ özü | ✅ |
+| **Prometheus** | monitoring | :9090/metrics | ✅ self | ✅ |
 | **Grafana** | monitoring | :3000/metrics | ✅ kube-prom | — |
 | **Alertmanager** | monitoring | :9093/metrics | ✅ kube-prom | — |
-| **Calico Felix** | kube-system | :9091/metrics | ✅ bizim | ❌ |
-| **BirService apps** (hello-csharp və s.) | loadtest və s. | :8080/metrics | ✅ operator | ✅ BirService |
-| **Istiod** | istio-system | :15014/metrics | ✅ bizim | ❌ |
-| **Envoy sidecars** | (all injected) | :15090/stats/prometheus | ✅ bizim (PodMonitor) | ❌ |
-| **Jaeger** | istio-system | :14269/metrics | ✅ bizim | ❌ |
-| **Kiali** | istio-system | :9090/metrics | ✅ bizim | ❌ |
+| **Calico Felix** | kube-system | :9091/metrics | ✅ ours | ❌ |
+| **BirService apps** (hello-csharp, etc.) | loadtest, etc. | :8080/metrics | ✅ operator | ✅ BirService |
+| **Istiod** | istio-system | :15014/metrics | ✅ ours | ❌ |
+| **Envoy sidecars** | (all injected) | :15090/stats/prometheus | ✅ ours (PodMonitor) | ❌ |
+| **Jaeger** | istio-system | :14269/metrics | ✅ ours | ❌ |
+| **Kiali** | istio-system | :9090/metrics | ✅ ours | ❌ |
 | **ExternalDNS** | external-dns | :7979/metrics | ✅ chart | ❌ |
 | **cert-manager** | cert-manager | :9402/metrics | ✅ chart | ❌ |
 | **Vault** | external (bare-metal) | :8200/v1/sys/metrics | ✅ additionalScrapeConfigs | ❌ |
@@ -32,44 +32,44 @@ Hər run olunan sistem komponenti üçün:
 
 ---
 
-## Nəzərdə tutulan prinsip
+## Principles
 
-1. **Metrik endpoint** — komponent `/metrics` (Prometheus format) və ya health endpoint expose etməlidir
-2. **ServiceMonitor** — Prometheus cluster-da olduqda, hər komponent üçün ServiceMonitor (və ya PodMonitor) olmalıdır
-3. **Dashboard** — ən azı ümumi "up" və əsas metrik paneli; kritik komponentlər üçün ayrıca dashboard
+1. **Metrics endpoint** — every component must expose a `/metrics` (Prometheus format) or health endpoint.
+2. **ServiceMonitor** — when Prometheus is in-cluster, every component should have a ServiceMonitor (or PodMonitor).
+3. **Dashboard** — at minimum a generic "up" panel plus the component's primary metrics; critical components get their own dashboard.
 
 ---
 
-## Əlavə edilməli
+## What still needs adding
 
 ### 1. Easy-Deploy Operator ✅
-- PodMonitor: `monitoring/operator-servicemonitor.yaml` — əlavə olundu
-- Dashboard: controller reconcile rate, error count, workqueue depth (opsional)
+- PodMonitor: `monitoring/operator-servicemonitor.yaml` — added
+- Dashboard: controller reconcile rate, error count, workqueue depth (optional)
 
 ### 2. Registry
-- Registry image metrics dəstəkləmir — alternativ: sidecar exporter və ya health check əsaslı yoxlama
-- Sadə "up" check: Registry service-ə TCP probe
+- The Registry image does not support metrics natively — alternative: a sidecar exporter, or a health-check-based probe.
+- Simple "up" check: TCP probe against the Registry service.
 
 ### 3. Calico
-- ServiceMonitor ✅ (bizim calico-servicemonitor.yaml)
-- Dashboard: Felix metrik paneli (ops/sec, policy count və s.)
+- ServiceMonitor ✅ (our `calico-servicemonitor.yaml`)
+- Dashboard: Felix metrics panel (ops/sec, policy count, etc.)
 
 ### 4. ExternalDNS
-- ServiceMonitor: ✅ chart dəstəkləyir, `serviceMonitor.enabled: true` aktiv edildi
+- ServiceMonitor: ✅ chart-supported, `serviceMonitor.enabled: true` is set.
 
 ### 5. cert-manager
-- ServiceMonitor: ✅ chart dəstəkləyir, `prometheus.servicemonitor.enabled: true` aktiv edildi
+- ServiceMonitor: ✅ chart-supported, `prometheus.servicemonitor.enabled: true` is set.
 
 ### 6. Registry / Registry-UI
-- Docker Registry v2 default-da `/metrics` expose etmir (debug mode lazımdır)
-- Registry-UI (joxit) metrics endpoint-i yoxdur
-- Alternativ: TCP/HTTP probe ilə "up" yoxlaması
+- Docker Registry v2 does not expose `/metrics` by default (debug mode required).
+- Registry-UI (joxit) has no metrics endpoint.
+- Alternative: "up" check via TCP/HTTP probe.
 
 ### 7. Vault (external)
-- Prometheus `additionalScrapeConfigs` ilə scrape olunur (ServiceMonitor istifadə oluna bilməz — Kubernetes xaricindədir)
+- Scraped via Prometheus `additionalScrapeConfigs` (ServiceMonitor not usable — Vault is outside Kubernetes).
 - Metrics endpoint: `https://vault.easysolution.work/v1/sys/metrics?format=prometheus`
-- Auth: `unauthenticated_metrics_access = true` ilə token tələb etmir
-- Aktivləşdirmə (`vault.hcl`):
+- Auth: not required when `unauthenticated_metrics_access = true`.
+- Enable in `vault.hcl`:
   ```hcl
   listener "tcp" {
     address     = "127.0.0.1:8200"
@@ -84,7 +84,7 @@ Hər run olunan sistem komponenti üçün:
     disable_hostname          = true
   }
   ```
-- **Qeyd:** Vault 1.15+ versiyalarda `unauthenticated_metrics_access` `listener.telemetry` blokunda olmalıdır (top-level `telemetry`-də dəstəklənmir)
+- **Note:** in Vault 1.15+ `unauthenticated_metrics_access` must live inside the `listener.telemetry` block (it is not supported at the top-level `telemetry` block).
 - Prometheus scrape config (`kube-prometheus-stack-values.yaml`):
   ```yaml
   additionalScrapeConfigs:
@@ -100,11 +100,11 @@ Hər run olunan sistem komponenti üçün:
   ```
 
 ### 8. Keycloak (external)
-- Prometheus `additionalScrapeConfigs` ilə scrape olunur (ServiceMonitor istifadə oluna bilməz — Kubernetes xaricindədir)
-- Metrics endpoint: `https://keycloak.easysolution.work/metrics` (Nginx → localhost:9000)
-- Auth: lazım deyil
-- Aktivləşdirmə: `kc.sh start --metrics-enabled=true --health-enabled=true`
-- Nginx-də `/metrics` location əlavə olunmalıdır (port 9000-ə proxy)
+- Scraped via Prometheus `additionalScrapeConfigs` (ServiceMonitor not usable — Keycloak is outside Kubernetes).
+- Metrics endpoint: `https://keycloak.easysolution.work/metrics` (Nginx → localhost:9000).
+- Auth: not required.
+- Enable: `kc.sh start --metrics-enabled=true --health-enabled=true`.
+- Nginx must expose a `/metrics` location proxying to port 9000.
 - Prometheus scrape config (`kube-prometheus-stack-values.yaml`):
   ```yaml
   additionalScrapeConfigs:
@@ -117,8 +117,5 @@ Hər run olunan sistem komponenti üçün:
         - targets: ['keycloak.easysolution.work']
   ```
 
-### Niyə `additionalScrapeConfigs`?
-Vault və Keycloak Kubernetes klasterinin xaricində, bare-metal serverdə işləyir. `ServiceMonitor`
-yalnız klaster daxilindəki Kubernetes Service-lər üçün işləyir. External target-lər üçün
-Prometheus-un `static_configs` + `additionalScrapeConfigs` mexanizmi istifadə olunur.
-`insecure_skip_verify: true` Prometheus pod-unun server sertifikatını verify edə bilmədiyinə görə lazımdır.
+### Why `additionalScrapeConfigs`?
+Vault and Keycloak run on bare-metal servers outside the Kubernetes cluster. `ServiceMonitor` only works for in-cluster Kubernetes Services. For external targets we use Prometheus' `static_configs` + `additionalScrapeConfigs` mechanism. `insecure_skip_verify: true` is needed because the Prometheus pod cannot validate the server certificate.

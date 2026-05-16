@@ -36,7 +36,7 @@ if (-not $Hash -and $Password -ne "EasyDeploy2026") {
     $Hash = Get-BcryptHash $Password
 }
 if (-not $Hash -or $Hash.Length -lt 50) {
-    Write-Host "Bcrypt generate edilə bilmədi. argocd, docker və ya python lazımdır."
+    Write-Host "Could not generate bcrypt hash. Install argocd, docker, or python."
     exit 1
 }
 

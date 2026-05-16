@@ -1,46 +1,46 @@
-# Pipeline şablonları
+# Pipeline templates
 
-Repolara əlavə edə biləcəyiniz CI/CD workflow-ları.
+CI/CD workflows you can add to your repositories.
 
 ## GitHub Actions — Build & Push
 
-Hər push-da image yaradır və `registry.easysolution.work`-ə push edir.
+Builds an image on every push and pushes it to `registry.easysolution.work`.
 
-### 1. Workflow faylını əlavə et
+### 1. Add the workflow file
 
-Reponun kökünə `.github/workflows/build-push.yaml` yarat və `github-actions-build-push.yaml` məzmununu kopyala.
+Create `.github/workflows/build-push.yaml` at the root of your repo and copy the contents of `github-actions-build-push.yaml`.
 
 ### 2. Registry credentials (Secret)
 
 GitHub repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**:
 
-| Secret             | Dəyər                          |
-|--------------------|---------------------------------|
-| `REGISTRY_USERNAME`| Registry istifadəçi adı         |
-| `REGISTRY_PASSWORD`| Registry parolu və ya token     |
+| Secret             | Value                            |
+|--------------------|----------------------------------|
+| `REGISTRY_USERNAME`| Registry username                |
+| `REGISTRY_PASSWORD`| Registry password or token       |
 
-> Registry-də auth yoxdursa: `REGISTRY_USERNAME` = `""`, `REGISTRY_PASSWORD` = `""` (boş) — bəzi konfiqurasiyalarda işləyə bilər. Güvənli istifadə üçün auth tövsiyə olunur.
+> If the registry has auth disabled: leave both empty (`""`). It may work in some configurations, but auth is recommended for any real use.
 
 ### 3. Dockerfile
 
-Repo kökündə `Dockerfile` olmalıdır. Başqa path üçün `context` və `file` dəyişdirin:
+The repo must have a `Dockerfile` at the root. For a different path, override `context` and `file`:
 
 ```yaml
 with:
-  context: ./backend    # məs: alt qovluq
+  context: ./backend    # e.g. subdirectory
   file: ./backend/Dockerfile
 ```
 
-### 4. Image adları
+### 4. Image tags
 
-- `latest` — hər push-da yenilənir  
-- `<short_sha>` — commit hash (məs: `abc1234`), versiya kimi işləyir  
+- `latest` — updated on every push
+- `<short_sha>` — commit hash (e.g. `abc1234`), serves as a version tag
 
-BasePlate-Dev-də `todo-api/dev.yaml` və s. `image: registry.easysolution.work/todo-api:latest` istifadə edə bilər və ya `:abc1234` ilə sabit versiya.
+In BasePlate-Dev, `todo-api/dev.yaml` (and similar) can reference `image: registry.easysolution.work/todo-api:latest`, or pin a specific build with `:abc1234`.
 
-### 5. Fərqli image adı (monorepo)
+### 5. Different image name (monorepo)
 
-Repo adı service adından fərqlidirsə (məs: `my-monorepo` → `todo-api`), workflow-da `image_name` dəyişdirin:
+If the repo name differs from the service name (e.g. `my-monorepo` → `todo-api`), override `image_name` in the workflow:
 
 ```yaml
 - name: Set image name

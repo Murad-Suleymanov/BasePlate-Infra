@@ -116,10 +116,10 @@ nginx -t
 systemctl enable nginx
 
 echo ""
-echo "=== Vault quraşdırıldı ==="
+echo "=== Vault installed ==="
 echo ""
-echo "Növbəti addımlar:"
-echo "  1. TLS sertifikat qoy: /etc/ssl/easysolution/fullchain.pem + privkey.pem"
+echo "Next steps:"
+echo "  1. Drop a TLS certificate at /etc/ssl/easysolution/fullchain.pem + privkey.pem"
 echo "  2. systemctl start vault"
 echo "  3. systemctl start nginx"
 echo "  4. export VAULT_ADDR=https://${VAULT_HOSTNAME}"

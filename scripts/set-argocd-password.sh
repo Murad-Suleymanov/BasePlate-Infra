@@ -38,7 +38,7 @@ if [ -z "$HASH" ]; then
   HASH=$(get_hash "$PASSWORD")
 fi
 if [ -z "$HASH" ] || [ "${#HASH}" -lt 50 ]; then
-  echo "Bcrypt generate edilə bilmədi. argocd, docker və ya python lazımdır."
+  echo "Could not generate bcrypt hash. Install argocd, docker, or python."
   exit 1
 fi
 
