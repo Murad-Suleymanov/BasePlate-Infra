@@ -102,8 +102,7 @@ All components are managed by ArgoCD via the `infra-applications` chart. Each co
 | **argocd-config** | local | — | argocd | Route, insecure mode, extra resources |
 | **applicationsets** | local | — | argocd | Developer app generation from BasePlate-Dev |
 | **easy-deploy-platform** | BasePlate repo | — | easy-deploy-system | Go operator + CRDs |
-| **gateway-config** | local | — | nginx-gateway | Gateway, ClusterIssuer (Let's Encrypt), wildcard cert |
-| **nginx-gateway-fabric** | ghcr.io/nginx/charts | 2.4.2 | nginx-gateway | Gateway API implementation (ingress) |
+| **gateway-config** | local | — | nginx-gateway | Gateway (gatewayClassName: istio), node-IP Service, ClusterIssuer (Let's Encrypt), wildcard cert |
 | **cert-manager** | jetstack | v1.17.2 | cert-manager | TLS certificate automation |
 | **external-dns** | kubernetes-sigs | 1.16.1 | external-dns | Cloudflare DNS record management |
 | **kube-prometheus-stack** | prometheus-community | 82.4.3 | monitoring | Prometheus + Grafana + Alertmanager |
@@ -229,7 +228,7 @@ kubectl apply -f argocd/prod/application-root.yaml
 
 This automatically deploys everything:
 - ArgoCD config, ApplicationSets
-- cert-manager, external-dns, nginx-gateway-fabric
+- cert-manager, external-dns
 - kube-prometheus-stack, metrics-server, monitoring-config
 - registry, gateway-config
 - **vault-secrets-operator** (VSO) + **secrets-config**

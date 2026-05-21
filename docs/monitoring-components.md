@@ -14,7 +14,7 @@ For every system component we run:
 | **Easy-Deploy Operator** | easy-deploy-system | :8080/metrics | ✅ PodMonitor | ❌ |
 | **Registry** | registry | :5000/metrics (n/a) | ❌ | ❌ |
 | **Registry-UI** | registry | :80 (no metrics) | ❌ | ❌ |
-| **NGINX Gateway Fabric** | nginx-gateway | exposed by chart | ✅ kube-prom | ✅ NGINX |
+| **Istio Gateway** | nginx-gateway | :15020/stats/prometheus | ✅ istio | ✅ Istio |
 | **ArgoCD** | argocd | :8082/metrics | ✅ kube-prom | ✅ ArgoCD |
 | **Prometheus** | monitoring | :9090/metrics | ✅ self | ✅ |
 | **Grafana** | monitoring | :3000/metrics | ✅ kube-prom | — |

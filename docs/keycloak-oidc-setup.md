@@ -70,7 +70,7 @@ Complete guide for setting up Keycloak and Vault on bare-metal, configuring Ngin
   - `jaeger.easysolution.work` → cluster ingress IP
   - `kiali.easysolution.work` → cluster ingress IP
 - A running Kubernetes cluster with:
-  - NGINX Gateway Fabric
+  - Istio (service mesh + ingress gateway)
   - Vault Secrets Operator
   - ArgoCD
   - Jaeger (Helm chart)

@@ -33,10 +33,7 @@ ui:
 
 route:
   sections: [http, https]
-
-clientSettings:
-  maxSize: "0"
-  timeout: "300s"
+  requestTimeout: "300s"
 
 gc:
   enabled: true

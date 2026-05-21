@@ -46,10 +46,8 @@ route:
   sections:
     - http
     - https
-
-clientSettings:
-  maxSize: "0"
-  timeout: "300s"
+  # Request timeout for the registry HTTPRoute (large image layer pushes).
+  requestTimeout: "300s"
 
 gc:
   enabled: true

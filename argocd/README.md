@@ -20,7 +20,6 @@ application-root.yaml
             ├─ easy-deploy-platform
             ├─ cert-manager
             ├─ external-dns
-            ├─ nginx-gateway-fabric
             ├─ kube-prometheus-stack
             ├─ metrics-server
             ├─ gateway-config

@@ -1,6 +1,6 @@
 # Istio Service Mesh Setup
 
-Complete guide for the Istio service mesh deployment, including mTLS, distributed tracing with Jaeger, service mesh observability with Kiali, and external access via NGINX Gateway Fabric.
+Complete guide for the Istio service mesh deployment, including mTLS, distributed tracing with Jaeger, service mesh observability with Kiali, and external access via the Istio ingress gateway.
 
 ## Table of Contents
 
@@ -12,7 +12,7 @@ Complete guide for the Istio service mesh deployment, including mTLS, distribute
 - [Part 4: Jaeger (Distributed Tracing)](#part-4-jaeger-distributed-tracing)
 - [Part 5: Kiali (Service Mesh Dashboard)](#part-5-kiali-service-mesh-dashboard)
 - [Part 6: Sidecar Injection](#part-6-sidecar-injection)
-- [Part 7: External Access via NGINX Gateway](#part-7-external-access-via-nginx-gateway)
+- [Part 7: External Access via the Istio Gateway](#part-7-external-access-via-the-istio-gateway)
 - [Part 8: Environment Differences (Prod vs Dev)](#part-8-environment-differences-prod-vs-dev)
 - [Troubleshooting](#troubleshooting)
 
@@ -54,7 +54,7 @@ Complete guide for the Istio service mesh deployment, including mTLS, distribute
 │                                                                         │
 │  ┌─────────────────────────┐                                           │
 │  │ nginx-gateway namespace  │                                           │
-│  │  NGINX Gateway Fabric    │◄── jaeger.easysolution.work              │
+│  │  Istio Gateway           │◄── jaeger.easysolution.work              │
 │  │  (main-gateway)          │◄── kiali.easysolution.work               │
 │  └─────────────────────────┘                                           │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -62,7 +62,7 @@ Complete guide for the Istio service mesh deployment, including mTLS, distribute
 
 All Istio components are deployed to the `istio-system` namespace via ArgoCD. Traffic between services in injected namespaces is encrypted with mutual TLS (mTLS). Distributed traces are collected by Jaeger and visualized in the Kiali dashboard.
 
-External access to Jaeger and Kiali is provided through NGINX Gateway Fabric using Kubernetes Gateway API `HTTPRoute` resources — **not** Istio `Gateway`/`VirtualService`.
+External access to Jaeger and Kiali is provided through the Istio ingress gateway using Kubernetes Gateway API `Gateway` + `HTTPRoute` resources — **not** Istio's legacy `Gateway`/`VirtualService` API.
 
 ---
 
@@ -273,7 +273,7 @@ Files:
 - `charts/istio-config/templates/jaeger-route.yaml`
 - `charts/istio-config/templates/kiali-route.yaml`
 
-These create Kubernetes Gateway API `HTTPRoute` resources that attach to the shared NGINX Gateway (`main-gateway` in `nginx-gateway` namespace):
+These create Kubernetes Gateway API `HTTPRoute` resources that attach to the shared Istio Gateway (`main-gateway` in `nginx-gateway` namespace):
 
 | Route | Hostname | Backend |
 |-------|----------|---------|
@@ -488,9 +488,9 @@ With `holdApplicationUntilProxyStarts: true` in the istiod configuration, applic
 
 ---
 
-## Part 7: External Access via NGINX Gateway
+## Part 7: External Access via the Istio Gateway
 
-Istio services (Jaeger, Kiali) are exposed externally through **NGINX Gateway Fabric** using Kubernetes Gateway API `HTTPRoute` resources — not Istio's own `Gateway`/`VirtualService`.
+Istio services (Jaeger, Kiali) are exposed externally through the **Istio ingress gateway** using Kubernetes Gateway API `Gateway` + `HTTPRoute` resources — not Istio's legacy `Gateway`/`VirtualService` API.
 
 ### Traffic Flow
 
@@ -501,7 +501,7 @@ Internet
 DNS (external-dns) → jaeger.easysolution.work → Cluster IP
   │
   ▼
-NGINX Gateway Fabric (main-gateway, nginx-gateway namespace)
+Istio Gateway (main-gateway, nginx-gateway namespace)
   │
   ▼ HTTPRoute: jaeger-route
   │

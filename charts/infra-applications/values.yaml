@@ -108,20 +108,6 @@ applications:
     syncOptions:
       - CreateNamespace=true
 
-  nginx-gateway-fabric:
-    enabled: true
-    destinationNamespace: nginx-gateway
-    source:
-      repoURL: ghcr.io/nginx/charts
-      chart: nginx-gateway-fabric
-      targetRevision: "2.4.2"
-      helm:
-        releaseName: ngf
-    valuesPath: nginx-gateway-fabric/values/nginx-gateway-fabric-values.yaml
-    syncOptions:
-      - CreateNamespace=true
-      - ServerSideApply=true
-
   kube-prometheus-stack:
     enabled: true
     destinationNamespace: monitoring

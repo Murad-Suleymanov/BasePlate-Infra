@@ -5,6 +5,11 @@ metadata:
   namespace: {{ .Values.gateway.namespace }}
   annotations:
     external-dns.alpha.kubernetes.io/target: {{ .Values.targetIP | quote }}
+    # Istio auto-provisions the gateway data plane (Deployment + Service) for this
+    # Gateway. Force the generated Service to ClusterIP so it does not sit in a
+    # permanently-pending LoadBalancer state on bare metal — the node IP is wired
+    # up separately by the gateway-external Service (see gateway-service.yaml).
+    networking.istio.io/service-type: ClusterIP
 spec:
   gatewayClassName: {{ .Values.gateway.className }}
   listeners:

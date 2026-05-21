@@ -1,0 +1,35 @@
+{{- if .Values.targetIP }}
+# External entrypoint for the Istio-managed Gateway.
+#
+# Istio auto-provisions a ClusterIP Service + Deployment for the `main-gateway`
+# Gateway (gatewayClassName: istio). This bare-metal cluster has no cloud
+# LoadBalancer controller, so instead of a LoadBalancer Service this extra
+# Service pins the node IP via `spec.externalIPs`: kube-proxy programs every
+# node to DNAT <targetIP>:80/:443 to the gateway pods. ClusterIP (not
+# LoadBalancer) keeps the ArgoCD Application Healthy — a LoadBalancer Service
+# would stay <pending> forever without an LB controller.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.gateway.name }}-external
+  namespace: {{ .Values.gateway.namespace }}
+  labels:
+    app.kubernetes.io/managed-by: gateway-config
+    app.kubernetes.io/part-of: {{ .Values.gateway.name }}
+spec:
+  type: ClusterIP
+  externalIPs:
+    - {{ .Values.targetIP | quote }}
+  # Selects the gateway pods Istio auto-deploys for the Gateway resource.
+  selector:
+    gateway.networking.k8s.io/gateway-name: {{ .Values.gateway.name }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+    - name: https
+      port: 443
+      targetPort: 443
+      protocol: TCP
+{{- end }}

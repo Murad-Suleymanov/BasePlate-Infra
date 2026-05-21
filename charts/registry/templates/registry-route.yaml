@@ -18,3 +18,8 @@ spec:
     - backendRefs:
         - name: registry
           port: {{ .Values.registry.port }}
+{{- if .Values.route.requestTimeout }}
+      # Large image layer pushes need a generous request timeout.
+      timeouts:
+        request: {{ .Values.route.requestTimeout | quote }}
+{{- end }}

@@ -5,7 +5,7 @@ acmeEmail: admin@easysolution.work
 gateway:
   name: main-gateway
   namespace: nginx-gateway
-  className: nginx
+  className: istio
   listeners:
     - name: http
       port: 80
