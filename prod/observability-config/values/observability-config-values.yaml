@@ -25,6 +25,7 @@ instrumentation:
     - tracecontext
     - baggage
     - b3
+    - b3multi
   images:
     java: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest
     python: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:latest
