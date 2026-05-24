@@ -70,8 +70,8 @@ External access to Jaeger and Kiali is provided through the Istio ingress gatewa
 
 | Component | Chart | Version | Source |
 |-----------|-------|---------|--------|
-| Istio Base (CRDs) | `base` | 1.29.1 | `istio-release.storage.googleapis.com/charts` |
-| Istiod (Control Plane) | `istiod` | 1.29.1 | `istio-release.storage.googleapis.com/charts` |
+| Istio Base (CRDs) | `base` | 1.30.0 | `istio-release.storage.googleapis.com/charts` |
+| Istiod (Control Plane) | `istiod` | 1.30.0 | `istio-release.storage.googleapis.com/charts` |
 | Istio Config | `istio-config` | 1.0.0 | Local chart (`charts/istio-config`) |
 | Kiali | `kiali-server` | 2.21.0 | `kiali.org/helm-charts` |
 | Jaeger | `jaeger` | 4.6.0 | `jaegertracing.github.io/helm-charts` |
@@ -102,7 +102,7 @@ istio-base:
   source:
     repoURL: https://istio-release.storage.googleapis.com/charts
     chart: base
-    targetRevision: "1.29.1"
+    targetRevision: "1.30.0"
     helm:
       releaseName: istio-base
   syncOptions:
@@ -179,7 +179,7 @@ istiod:
   source:
     repoURL: https://istio-release.storage.googleapis.com/charts
     chart: istiod
-    targetRevision: "1.29.1"
+    targetRevision: "1.30.0"
     helm:
       releaseName: istiod
   syncOptions:

@@ -111,8 +111,8 @@ All components are managed by ArgoCD via the `infra-applications` chart. Each co
 | **registry** | local | — | registry | Container registry + UI + GC cron |
 | **vault-secrets-operator** | hashicorp | 0.9.0 | vault-secrets-operator-system | Syncs Vault secrets to K8s Secrets |
 | **secrets-config** | local | — | (multi-namespace) | VaultConnection + VaultAuth + VaultStaticSecret |
-| **istio-base** | istio | 1.29.1 | istio-system | Istio CRDs |
-| **istiod** | istio | 1.29.1 | istio-system | Istio control plane |
+| **istio-base** | istio | 1.30.0 | istio-system | Istio CRDs |
+| **istiod** | istio | 1.30.0 | istio-system | Istio control plane |
 | **istio-config** | local | — | istio-system | mTLS, Telemetry, OAuth2 Proxy, Kiali/Jaeger routes |
 | **kiali-server** | kiali.org | 2.21.0 | istio-system | Service mesh observability dashboard |
 | **jaeger** | jaegertracing | 4.6.0 | istio-system | Distributed tracing |

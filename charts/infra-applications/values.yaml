@@ -178,7 +178,7 @@ applications:
     source:
       repoURL: https://istio-release.storage.googleapis.com/charts
       chart: base
-      targetRevision: "1.29.1"
+      targetRevision: "1.30.0"
       helm:
         releaseName: istio-base
     valuesPath: istio-base/values/istio-base-values.yaml
@@ -198,7 +198,7 @@ applications:
     source:
       repoURL: https://istio-release.storage.googleapis.com/charts
       chart: istiod
-      targetRevision: "1.29.1"
+      targetRevision: "1.30.0"
       helm:
         releaseName: istiod
     valuesPath: istiod/values/istiod-values.yaml
