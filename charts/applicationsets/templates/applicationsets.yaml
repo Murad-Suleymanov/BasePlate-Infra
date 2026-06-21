@@ -29,6 +29,8 @@ spec:
             ignoreMissingValueFiles: true
             valueFiles:
               - '$values/{{ "{{" }} .path.path {{ "}}" }}/service.yaml'
+              # Per-cluster route catalog: dev cluster loads routes-dev.yaml, prod routes-prod.yaml.
+              - '$values/{{ "{{" }} .path.path {{ "}}" }}/routes-{{ $.Values.environment }}.yaml'
               - '$values/{{ "{{" }} .path.path {{ "}}" }}/{{ "{{" }} .path.filename {{ "}}" }}'
         - repoURL: {{ $.Values.devRepo.repoURL }}
           targetRevision: {{ $.Values.devRepo.targetRevision }}
