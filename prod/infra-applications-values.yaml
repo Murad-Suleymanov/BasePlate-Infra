@@ -137,6 +137,19 @@ applications:
     syncOptions:
       - CreateNamespace=true
 
+  prometheus-adapter:
+    enabled: true
+    destinationNamespace: monitoring
+    source:
+      repoURL: https://prometheus-community.github.io/helm-charts
+      chart: prometheus-adapter
+      targetRevision: "4.11.0"
+      helm:
+        releaseName: prometheus-adapter
+    valuesPath: prometheus-adapter/values/prometheus-adapter-values.yaml
+    syncOptions:
+      - CreateNamespace=true
+
   vault:
     enabled: false
     destinationNamespace: vault

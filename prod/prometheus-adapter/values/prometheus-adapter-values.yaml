@@ -1,0 +1,48 @@
+# prometheus-adapter — serves Prometheus queries through the Kubernetes
+# custom/external metrics API so HorizontalPodAutoscalers can scale on mesh
+# metrics. The BasePlate operator emits an autoscaling/v2 HPA with an External
+# metric (istio_requests_per_second) when a BirService sets spec.hpa.targetRPS.
+#
+# Deployed into the `monitoring` namespace alongside kube-prometheus-stack.
+
+# Point the adapter at the in-cluster Prometheus from kube-prometheus-stack
+# (helm release "monitoring" -> service monitoring-kube-prometheus-prometheus).
+prometheus:
+  url: http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local
+  port: 9090
+  path: ""
+
+replicas: 1
+
+rules:
+  # Drop the chart's default CPU/memory resource rules — metrics-server already
+  # serves resource metrics for CPU/memory HPAs.
+  default: false
+  resource: {}
+
+  # External metric: Istio requests-per-second per workload.
+  #
+  # istio_requests_total is the L7 request counter emitted by the waypoint proxy
+  # for waypoint-enrolled workloads (spec.traffic on the BirService). The metric
+  # is namespaced via the destination_workload_namespace -> namespace override,
+  # so an HPA in namespace N only sees its own workloads. The HPA selects a
+  # workload by destination_workload and uses an AverageValue target, dividing
+  # the workload's total RPS by the per-pod target to choose a replica count.
+  external:
+    - seriesQuery: 'istio_requests_total{destination_workload!="",destination_workload_namespace!=""}'
+      resources:
+        overrides:
+          destination_workload_namespace:
+            resource: namespace
+      name:
+        matches: "^istio_requests_total$"
+        as: "istio_requests_per_second"
+      metricsQuery: 'sum(rate(<<.Series>>{<<.LabelMatchers>>}[1m])) by (destination_workload, destination_workload_namespace)'
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
