@@ -1,7 +1,8 @@
 # prometheus-adapter — serves Prometheus queries through the Kubernetes
-# custom/external metrics API so HorizontalPodAutoscalers can scale on mesh
-# metrics. The BasePlate operator emits an autoscaling/v2 HPA with an External
-# metric (istio_requests_per_second) when a BirService sets spec.hpa.targetRPS.
+# custom/external metrics API so HorizontalPodAutoscalers can scale on mesh and
+# app metrics. The BasePlate operator emits an HPA metric from a BirService's
+# spec.hpa.scaleType: rps → External istio_requests_per_second, worker → Pods
+# app_worker_utilization (both served here).
 #
 # Deployed into the `monitoring` namespace alongside kube-prometheus-stack.
 
@@ -19,6 +20,28 @@ rules:
   # serves resource metrics for CPU/memory HPAs.
   default: false
   resource: {}
+
+  # Custom (Pods) metric: worker-utilization % per pod.
+  #
+  # app_worker_utilization is the language-agnostic recording rule (kube-prometheus
+  # PrometheusRule app-worker-scaling) = 100 * busy / max workers, normalized across
+  # runtimes (PHP-FPM, Java, …). The operator emits a Pods HPA metric of this name
+  # when a BirService sets spec.hpa.scaleType: worker; the HPA averages the % across
+  # the workload's pods and compares it to the per-pod utilization target.
+  # namespace/pod overrides associate each series with its Pod object so the HPA
+  # only sees its own workloads' pods.
+  custom:
+    - seriesQuery: 'app_worker_utilization{namespace!="",pod!=""}'
+      resources:
+        overrides:
+          namespace:
+            resource: namespace
+          pod:
+            resource: pod
+      name:
+        matches: "^app_worker_utilization$"
+        as: "app_worker_utilization"
+      metricsQuery: 'avg(<<.Series>>{<<.LabelMatchers>>}) by (<<.GroupBy>>)'
 
   # External metric: Istio requests-per-second per workload.
   #

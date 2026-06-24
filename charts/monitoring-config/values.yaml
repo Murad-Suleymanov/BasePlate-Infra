@@ -91,3 +91,33 @@ serviceMonitors:
 #       - port: metrics
 #         path: /metrics
 extraServiceMonitors: []
+
+# Worker-saturation autoscaling (HPA scaleType: worker).
+# A single recording rule normalizes each runtime's busy/max worker gauges into
+# one per-pod utilization % series, app_worker_utilization (0-100). The operator's
+# worker HPA reads only that series, so it is language-agnostic. Add a runtime by
+# appending a {name, busy, max} entry — nothing else changes.
+#
+# busy = currently-working units; max = pool capacity. The rule computes
+# 100 * busy / max per pod. Each app must expose its runtime's metrics (via
+# spec.metrics ServiceMonitor) for its pods to be scalable on workers.
+workerScaling:
+  enabled: true
+  sources:
+    # PHP-FPM (php-fpm_exporter). With static pm, total_processes == pm.max_children,
+    # so active/total is true utilization.
+    - name: php-fpm
+      busy: phpfpm_active_processes
+      max: phpfpm_total_processes
+    # Java thread pool (micrometer / Spring Boot Actuator) — exposes both busy and max.
+    # - name: java
+    #   busy: executor_active_threads
+    #   max: executor_pool_max_threads
+    # Python/gunicorn (gunicorn statsd/prometheus exporter).
+    # - name: gunicorn
+    #   busy: gunicorn_workers{state="busy"}
+    #   max: gunicorn_workers
+    # Ruby/puma.
+    # - name: puma
+    #   busy: puma_busy_threads
+    #   max: puma_max_threads

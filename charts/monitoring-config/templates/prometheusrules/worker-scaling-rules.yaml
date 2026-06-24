@@ -1,0 +1,34 @@
+{{- if and .Values.workerScaling.enabled (gt (len .Values.workerScaling.sources) 0) }}
+{{- /*
+  One language-agnostic worker-saturation series for HPA scaleType: worker.
+
+  Each runtime exposes "busy workers" and "max workers" under different metric
+  names; this rule normalizes every runtime into a single per-pod utilization
+  percentage, app_worker_utilization (0-100) = 100 * busy / max, and ORs them.
+  A pod runs exactly one runtime, so the OR yields that pod's value.
+
+  The operator's worker HPA reads ONLY app_worker_utilization, so it is identical
+  for PHP, Java, Python, … — adding a runtime is one entry in
+  workerScaling.sources, with no operator or chart change. Per-pod only: the HPA's
+  AverageValue target does the cross-pod averaging.
+*/ -}}
+{{- $exprs := list -}}
+{{- range .Values.workerScaling.sources -}}
+{{- $e := printf "100 * sum by (namespace, pod) (%s) / sum by (namespace, pod) (%s)" .busy .max -}}
+{{- $exprs = append $exprs $e -}}
+{{- end -}}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: app-worker-scaling
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: app-worker-scaling
+spec:
+  groups:
+    - name: app-worker-scaling.rules
+      rules:
+        - record: app_worker_utilization
+          expr: |-
+            {{ $exprs | join " or " }}
+{{- end }}
