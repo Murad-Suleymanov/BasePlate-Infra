@@ -329,7 +329,12 @@ applications:
     source:
       repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
       chart: opentelemetry-operator
-      targetRevision: "0.74.0"
+      # 0.76.0 bundles operator 0.115.0, which ignores AlreadyExists when
+      # bootstrapping its self-metrics ServiceMonitor. 0.74.0 (operator 0.113.0)
+      # crash-loops with "opentelemetry-operator-metrics-monitor already exists"
+      # after any ungraceful pod kill, because it leaks the SM and then fails to
+      # re-Create it on restart.
+      targetRevision: "0.76.0"
       helm:
         releaseName: opentelemetry-operator
     valuesPath: opentelemetry-operator/values/opentelemetry-operator-values.yaml
