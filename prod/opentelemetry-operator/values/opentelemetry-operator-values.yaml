@@ -1,6 +1,12 @@
 manager:
   collectorImage:
     repository: otel/opentelemetry-collector-contrib
+  # Disable the operator's self-metrics ServiceMonitor bootstrap. The 0.113.0
+  # binary creates "opentelemetry-operator-metrics-monitor" with a plain Create,
+  # so on a pod restart (the object survives) it fails with "already exists" and
+  # crash-loops. No OpenTelemetryCollector CRs are managed here (operator is only
+  # used for auto-instrumentation), so disabling this gate has no functional loss.
+  featureGates: "-operator.observability.prometheus"
   resources:
     requests:
       cpu: 100m
