@@ -104,20 +104,27 @@ extraServiceMonitors: []
 workerScaling:
   enabled: true
   sources:
+    # A pod only produces a series for the runtime whose metrics it actually
+    # exposes (sum of a non-existent metric is empty, so that `or` branch yields
+    # nothing). Enabling all runtimes here is therefore safe: each app activates
+    # worker scaling once it serves the matching busy/max gauges at /metrics
+    # (spec.metrics). Adjust the names below to whatever each app really exports.
+    #
     # PHP-FPM (php-fpm_exporter). With static pm, total_processes == pm.max_children,
     # so active/total is true utilization.
     - name: php-fpm
       busy: phpfpm_active_processes
       max: phpfpm_total_processes
     # Java thread pool (micrometer / Spring Boot Actuator) — exposes both busy and max.
-    # - name: java
-    #   busy: executor_active_threads
-    #   max: executor_pool_max_threads
-    # Python/gunicorn (gunicorn statsd/prometheus exporter).
-    # - name: gunicorn
-    #   busy: gunicorn_workers{state="busy"}
-    #   max: gunicorn_workers
+    - name: java
+      busy: executor_active_threads
+      max: executor_pool_max_threads
+    # Python/gunicorn (gunicorn statsd/prometheus exporter). Sync workers only —
+    # async (uvicorn) has no fixed pool, so scale those on rps/cpu instead.
+    - name: gunicorn
+      busy: gunicorn_workers{state="busy"}
+      max: gunicorn_workers
     # Ruby/puma.
-    # - name: puma
-    #   busy: puma_busy_threads
-    #   max: puma_max_threads
+    - name: puma
+      busy: puma_busy_threads
+      max: puma_max_threads
