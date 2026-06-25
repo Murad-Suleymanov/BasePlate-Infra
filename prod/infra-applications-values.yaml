@@ -329,12 +329,16 @@ applications:
     source:
       repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
       chart: opentelemetry-operator
-      # 0.76.0 bundles operator 0.115.0, which ignores AlreadyExists when
-      # bootstrapping its self-metrics ServiceMonitor. 0.74.0 (operator 0.113.0)
-      # crash-loops with "opentelemetry-operator-metrics-monitor already exists"
-      # after any ungraceful pod kill, because it leaks the SM and then fails to
-      # re-Create it on restart.
-      targetRevision: "0.76.0"
+      # 0.93.0 (operator 0.131.0) fixes the self-metrics ServiceMonitor crash:
+      # 0.74.0 (operator 0.113.0) crash-loops with
+      # "opentelemetry-operator-metrics-monitor already exists" after any
+      # ungraceful pod kill — it leaks the SM, then fails to re-Create it on
+      # restart. Operator >=0.115.0 ignores AlreadyExists. We can't use 0.76.0
+      # (the first fixed operator) because charts 0.76-0.92 ship a broken
+      # values.schema.json (featureGates.examples is a string) that Argo CD's
+      # helm rejects; 0.93.0 is the earliest chart with both the fix and a
+      # valid schema.
+      targetRevision: "0.93.0"
       helm:
         releaseName: opentelemetry-operator
     valuesPath: opentelemetry-operator/values/opentelemetry-operator-values.yaml
