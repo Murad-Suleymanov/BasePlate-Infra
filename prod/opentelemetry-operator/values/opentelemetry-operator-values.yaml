@@ -1,4 +1,11 @@
 manager:
+  # Disable the operator's self-created metrics ServiceMonitor. Its startup
+  # creation is not idempotent in 0.113.0 — on any restart it tries to Create an
+  # already-existing servicemonitor "opentelemetry-operator-metrics-monitor",
+  # errors out of main(), and CrashLoopBackOffs. We don't rely on operator-managed
+  # collector observability here (collectors run via the standalone chart), so
+  # turning this gate off is safe.
+  featureGates: "-operator.observability.prometheus"
   collectorImage:
     repository: otel/opentelemetry-collector-contrib
   resources:
