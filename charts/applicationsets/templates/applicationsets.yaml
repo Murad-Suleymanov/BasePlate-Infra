@@ -29,7 +29,12 @@ spec:
             ignoreMissingValueFiles: true
             valueFiles:
               - '$values/{{ "{{" }} .path.path {{ "}}" }}/service.yaml'
-              # Per-cluster route catalog: dev cluster loads routes-dev.yaml, prod routes-prod.yaml.
+              # Route catalog, layered. Base routes.yaml (common to every cluster) is
+              # deep-merged UNDER the per-cluster routes-<env>.yaml, so an env file
+              # overrides only the leaves that differ and adds cluster-only routes.
+              # Both are optional (ignoreMissingValueFiles) — apps with no base file
+              # keep working as before.
+              - '$values/{{ "{{" }} .path.path {{ "}}" }}/routes.yaml'
               - '$values/{{ "{{" }} .path.path {{ "}}" }}/routes-{{ $.Values.environment }}.yaml'
               - '$values/{{ "{{" }} .path.path {{ "}}" }}/{{ "{{" }} .path.filename {{ "}}" }}'
         - repoURL: {{ $.Values.devRepo.repoURL }}
