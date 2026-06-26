@@ -101,6 +101,11 @@ rbac:
         apiGroups: ["deploy.easydeploy.io"]
         resources: ["birservices/status"]
         verbs: ["get", "update", "patch"]
+      pools:
+        enabled: true
+        apiGroups: ["deploy.easydeploy.io"]
+        resources: ["pools"]
+        verbs: ["get", "list", "watch"]
       deployments:
         enabled: true
         apiGroups: ["apps"]
@@ -251,6 +256,9 @@ crd:
               type: string
             cpu:
               type: string
+    nodePool:
+      type: string
+      description: "Node pool to schedule on (resolves to a Pool resource → nodeSelector + tolerations). Empty = default untainted nodes."
     port:
       type: integer
       format: int32
@@ -370,3 +378,23 @@ crd:
       type: string
     canaryImage:
       type: string
+
+# Node pools. Adding a pool = add an entry here (no chart/ApplicationSet change).
+# The nodes themselves must be labelled/tainted to match at join time, e.g.:
+#   kubelet --node-labels=nodePool=system --register-with-taints=nodePool=system:NoSchedule
+pools:
+  # Default pool: untainted, no selector. Every workload with no spec.nodePool
+  # lands here. Declared explicitly so it shows up in `kubectl get pools`.
+  default:
+    enabled: true
+  # Our own platform / system components. Dedicated nodes: only workloads that
+  # set `pool: system` schedule here (taint repels everything else; nodeSelector
+  # pins system workloads onto these nodes).
+  system:
+    enabled: true
+    nodeSelector:
+      nodePool: system
+    taints:
+      - key: nodePool
+        value: system
+        effect: NoSchedule
