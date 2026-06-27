@@ -52,15 +52,18 @@ rules:
   # workload by destination_workload and uses an AverageValue target, dividing
   # the workload's total RPS by the per-pod target to choose a replica count.
   external:
-    - seriesQuery: 'istio_requests_total{destination_workload!="",destination_workload_namespace!=""}'
+    # The rate is pre-computed per window by operator-managed recording rules
+    # (istio_requests:rate_windowed, tagged with a `window` label). The HPA metric
+    # selector carries destination_workload + window, so each service picks its own
+    # window's series. No rate() here — it's already a per-second gauge.
+    - seriesQuery: 'istio_requests:rate_windowed{destination_workload!="",destination_workload_namespace!=""}'
       resources:
         overrides:
           destination_workload_namespace:
             resource: namespace
       name:
-        matches: "^istio_requests_total$"
         as: "istio_requests_per_second"
-      metricsQuery: 'sum(rate(<<.Series>>{<<.LabelMatchers>>}[1m])) by (destination_workload, destination_workload_namespace)'
+      metricsQuery: 'sum(<<.Series>>{<<.LabelMatchers>>}) by (destination_workload, destination_workload_namespace)'
 
 resources:
   requests:
