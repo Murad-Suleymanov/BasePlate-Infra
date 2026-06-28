@@ -149,6 +149,18 @@ applications:
     valuesPath: prometheus-adapter/values/prometheus-adapter-values.yaml
     syncOptions:
       - CreateNamespace=true
+      - RespectIgnoreDifferences=true
+    # The easy-deploy operator owns the adapter config and rolls the Deployment by
+    # bumping this pod-template annotation when the config changes. Let ArgoCD ignore
+    # it so self-heal doesn't revert the rollout (the chart's own config is empty —
+    # rules.existing points at the operator-managed ConfigMap).
+    ignoreDifferences:
+      - group: apps
+        kind: Deployment
+        name: prometheus-adapter
+        namespace: monitoring
+        jqPathExpressions:
+          - '.spec.template.metadata.annotations["easy-deploy.io/config-checksum"]'
 
   vault:
     enabled: false
