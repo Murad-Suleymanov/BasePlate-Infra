@@ -36,6 +36,12 @@ operator:
     webhookURL:
       enabled: true
       value: "https://webhook-dev.easysolution.work"
+    # Prometheus for the SLO rollback gate: the operator queries per-version Istio error
+    # rate / latency here to decide whether a new build tag is burning its error budget.
+    # Same in-cluster address Kiali reads from.
+    prometheusURL:
+      enabled: true
+      value: "http://monitoring-kube-prometheus-prometheus.monitoring:9090"
   extraEnv: []
 
   envFrom:
