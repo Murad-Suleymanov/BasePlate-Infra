@@ -1,0 +1,72 @@
+{{- if .Values.slo.enabled }}
+{{- /*
+  Sloth-style SLOs for every service in the mesh, discovered from Istio
+  telemetry rather than declared per service.
+
+  Nothing here is per-app: the group-by is what makes an SLO. Grouping
+  istio_requests_total by (namespace, canonical_service) yields one SLO per
+  service; adding destination_workload yields one per instance. So a new app
+  deployed through BasePlate-Dev gets availability and latency SLOs the moment
+  its first request is reported — no chart change, no values entry.
+
+  See templates/_helpers.tpl for the rule shape and why it matches sloth.dev.
+*/ -}}
+{{- $sel := .Values.slo.selector -}}
+{{- $svcBy := "destination_workload_namespace, destination_canonical_service" -}}
+{{- $instBy := "destination_workload_namespace, destination_canonical_service, destination_workload" -}}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: sloth-slo-rules
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: sloth-slo-rules
+    # Picked up by kube-prometheus-stack's ruleSelector alongside the other rules.
+    app.kubernetes.io/component: slo
+spec:
+  groups:
+{{- $levels := list (dict "level" "service" "by" $svcBy) -}}
+{{- if .Values.slo.instanceLevel.enabled -}}
+{{- $levels = append $levels (dict "level" "instance" "by" $instBy) -}}
+{{- end }}
+{{- range $lvl := $levels }}
+{{- if $.Values.slo.availability.enabled }}
+{{- /*
+  Availability SLI: the share of requests the destination answered with a 5xx.
+  4xx stays out of the error count deliberately — a client sending a bad request
+  is not the service failing, and counting it would let one misbehaving caller
+  burn a budget the owning team cannot defend.
+*/ -}}
+{{- include "monitoring-config.sloth.ruleGroup" (dict
+      "level" $lvl.level
+      "by" $lvl.by
+      "slo" "availability"
+      "objective" $.Values.slo.availability.objective
+      "period" $.Values.slo.period
+      "alerts" $.Values.slo.alerts
+      "errorExpr" (printf "sum by (%s) (rate(istio_requests_total{%s, response_code=~\"5..\"}[WINDOW]))" $lvl.by $sel)
+      "totalExpr" (printf "sum by (%s) (rate(istio_requests_total{%s}[WINDOW]))" $lvl.by $sel)
+    ) | nindent 4 }}
+{{- end }}
+{{- if $.Values.slo.latency.enabled }}
+{{- /*
+  Latency SLI: the share of requests slower than the threshold, read off the
+  histogram as (all requests - requests within the bucket). thresholdMs must be
+  an existing le bucket boundary of istio_request_duration_milliseconds —
+  Prometheus will not interpolate, an unknown le simply matches nothing and the
+  SLI silently reads 100% error. Istio's default boundaries include
+  0.5, 1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000.
+*/ -}}
+{{- include "monitoring-config.sloth.ruleGroup" (dict
+      "level" $lvl.level
+      "by" $lvl.by
+      "slo" "latency"
+      "objective" $.Values.slo.latency.objective
+      "period" $.Values.slo.period
+      "alerts" $.Values.slo.alerts
+      "errorExpr" (printf "sum by (%s) (rate(istio_request_duration_milliseconds_bucket{%s, le=\"+Inf\"}[WINDOW])) - sum by (%s) (rate(istio_request_duration_milliseconds_bucket{%s, le=\"%v\"}[WINDOW]))" $lvl.by $sel $lvl.by $sel $.Values.slo.latency.thresholdMs)
+      "totalExpr" (printf "sum by (%s) (rate(istio_request_duration_milliseconds_bucket{%s, le=\"+Inf\"}[WINDOW]))" $lvl.by $sel)
+    ) | nindent 4 }}
+{{- end }}
+{{- end }}
+{{- end }}

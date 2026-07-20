@@ -70,6 +70,7 @@ BasePlate-Infra/
 | [Keycloak OIDC Setup](docs/keycloak-oidc-setup.md) | Keycloak server, realm, clients, OAuth2 Proxy for Jaeger, Kiali OpenID |
 | [Monitoring Components](docs/monitoring-components.md) | Per-component metric endpoint / ServiceMonitor / dashboard matrix |
 | [Pipeline Injection](docs/pipeline-injection.md) | Operator → GitHub Actions workflow + secrets injection |
+| [SLO Monitoring](docs/slo-monitoring.md) | Sloth-style error budgets, burn-rate alerts, service/instance SLO dashboard |
 
 ---
 

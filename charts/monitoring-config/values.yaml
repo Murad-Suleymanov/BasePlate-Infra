@@ -128,3 +128,55 @@ workerScaling:
     - name: puma
       busy: puma_busy_threads
       max: puma_max_threads
+
+# Sloth-style SLOs, generated from Istio telemetry.
+#
+# Rather than declaring an SLO per service, the rules group istio_requests_total
+# by service (and optionally by instance), so every app deployed through
+# BasePlate-Dev is covered from its first request with no config here. The
+# emitted series use sloth.dev's exact metric names and its multiwindow
+# multi-burn-rate alert windows — see charts/monitoring-config/templates/_helpers.tpl.
+slo:
+  enabled: true
+
+  # Error-budget period. The 30d SLI is averaged from the recorded 5m series
+  # rather than ranged over the raw counter, so a long period stays cheap.
+  period: 30d
+
+  # Label selector applied to every SLI query. reporter="destination" counts each
+  # request once, at the receiving proxy — without it, requests between two
+  # meshed pods are reported twice (once by the caller, once by the callee) and
+  # every ratio is computed over inflated totals. Under ambient mesh, ztunnel
+  # reports as the destination, so this holds there too.
+  #
+  # Add exclusions here to keep infra chatter out of app SLOs, e.g.:
+  #   selector: 'reporter="destination", destination_workload_namespace!~"istio-system|monitoring"'
+  selector: 'reporter="destination"'
+
+  # Per-instance SLOs alongside the per-service ones. Costs one extra series set
+  # per pod, and is what makes a bad instance inside a healthy pool visible —
+  # the pool-level SLI averages it away.
+  instanceLevel:
+    enabled: true
+
+  availability:
+    enabled: true
+    # Share of requests that must not be 5xx. 99.9% over 30d = ~43m of budget.
+    objective: 99.9
+
+  latency:
+    enabled: true
+    # Share of requests that must complete within thresholdMs.
+    objective: 99.0
+    # MUST be an existing le bucket boundary of istio_request_duration_milliseconds.
+    # An unmatched value yields no series and the SLI reads as 100% error.
+    thresholdMs: 500
+
+  alerts:
+    enabled: true
+    # Fast burn — wake someone up.
+    page:
+      severity: critical
+    # Slow burn — file it, fix it this week.
+    ticket:
+      severity: warning
