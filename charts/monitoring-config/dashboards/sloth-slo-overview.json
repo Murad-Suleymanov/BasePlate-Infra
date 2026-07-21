@@ -30,7 +30,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "description": "Services burning their error budget faster than the Min burn rate. 100% is exactly on budget — it spends the whole period's budget in exactly one period. Empty is the healthy state.",
+      "description": "Services whose burn rate peaked above Min burn rate at any point in the selected time range. 100% is exactly on budget — it spends the whole period's budget in exactly one period. Peak rather than current on purpose: bursty traffic burns hard for a few minutes and then goes quiet, and a table reading only the last 5 minutes would sit empty next to a chart plainly showing the burn. Empty here means nothing burned in the whole range.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -48,7 +48,7 @@
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "Burn rate %" },
+            "matcher": { "id": "byName", "options": "Peak burn rate %" },
             "properties": [
               { "id": "unit", "value": "percent" },
               { "id": "decimals", "value": 0 },
@@ -74,21 +74,21 @@
         "cellHeight": "sm",
         "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
         "showHeader": true,
-        "sortBy": [{ "desc": true, "displayName": "Burn rate %" }]
+        "sortBy": [{ "desc": true, "displayName": "Peak burn rate %" }]
       },
       "pluginVersion": "10.0.0",
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "editorMode": "code",
-          "expr": "100 * (slo:current_burn_rate:ratio{sloth_level=\"service\", sloth_slo=~\"$slo\", destination_workload_namespace=~\"$namespace\", destination_canonical_service=~\"$service\"} > $minburn)",
+          "expr": "100 * (max_over_time(slo:current_burn_rate:ratio{sloth_level=\"service\", sloth_slo=~\"$slo\", destination_workload_namespace=~\"$namespace\", destination_canonical_service=~\"$service\"}[$__range]) > $minburn)",
           "format": "table",
           "instant": true,
           "range": false,
           "refId": "A"
         }
       ],
-      "title": "Exceeded burn rate — services",
+      "title": "Burned above $minburn x in range — services",
       "transformations": [
         {
           "id": "organize",
@@ -103,7 +103,7 @@
               "destination_canonical_service": "Service",
               "destination_workload_namespace": "Namespace",
               "sloth_slo": "SLO",
-              "Value": "Burn rate %"
+              "Value": "Peak burn rate %"
             }
           }
         }
@@ -112,7 +112,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "description": "The same question per workload. A pool can sit inside its SLO while one instance in it burns — the service row averages that away, this one does not.",
+      "description": "The same question per workload, also peak-over-range. A pool can sit inside its SLO while one instance in it burns — the service row averages that away, this one does not.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -130,7 +130,7 @@
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "Burn rate %" },
+            "matcher": { "id": "byName", "options": "Peak burn rate %" },
             "properties": [
               { "id": "unit", "value": "percent" },
               { "id": "decimals", "value": 0 },
@@ -156,21 +156,21 @@
         "cellHeight": "sm",
         "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
         "showHeader": true,
-        "sortBy": [{ "desc": true, "displayName": "Burn rate %" }]
+        "sortBy": [{ "desc": true, "displayName": "Peak burn rate %" }]
       },
       "pluginVersion": "10.0.0",
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "editorMode": "code",
-          "expr": "100 * (slo:current_burn_rate:ratio{sloth_level=\"instance\", sloth_slo=~\"$slo\", destination_workload_namespace=~\"$namespace\", destination_canonical_service=~\"$service\", destination_workload=~\"$instance\"} > $minburn)",
+          "expr": "100 * (max_over_time(slo:current_burn_rate:ratio{sloth_level=\"instance\", sloth_slo=~\"$slo\", destination_workload_namespace=~\"$namespace\", destination_canonical_service=~\"$service\", destination_workload=~\"$instance\"}[$__range]) > $minburn)",
           "format": "table",
           "instant": true,
           "range": false,
           "refId": "A"
         }
       ],
-      "title": "Exceeded burn rate — instances",
+      "title": "Burned above $minburn x in range — instances",
       "transformations": [
         {
           "id": "organize",
@@ -186,7 +186,7 @@
               "destination_workload": "Instance",
               "destination_workload_namespace": "Namespace",
               "sloth_slo": "SLO",
-              "Value": "Burn rate %"
+              "Value": "Peak burn rate %"
             }
           }
         }
