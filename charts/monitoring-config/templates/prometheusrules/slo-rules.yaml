@@ -36,6 +36,12 @@ spec:
   4xx stays out of the error count deliberately — a client sending a bad request
   is not the service failing, and counting it would let one misbehaving caller
   burn a budget the owning team cannot defend.
+
+  The `or (total * 0)` on the error side is not cosmetic. A service that has
+  never returned a 5xx has no response_code=~"5.." series at all, so the
+  numerator would be an empty vector, the division would match nothing, and the
+  healthiest services in the mesh would silently have no SLO. Or-ing in the
+  total's label set multiplied by zero mints the missing "zero errors" element.
 */ -}}
 {{- include "monitoring-config.sloth.ruleGroup" (dict
       "level" $lvl.level
@@ -44,8 +50,8 @@ spec:
       "objective" $.Values.slo.availability.objective
       "period" $.Values.slo.period
       "alerts" $.Values.slo.alerts
-      "errorExpr" (printf "sum by (%s) (rate(istio_requests_total{%s, response_code=~\"5..\"}[WINDOW]))" $lvl.by $sel)
-      "totalExpr" (printf "sum by (%s) (rate(istio_requests_total{%s}[WINDOW]))" $lvl.by $sel)
+      "errorExpr" (printf "sum by (%s) (rate(istio_requests_total{%s, response_code=~\"5..\"}[WINDOW])) or (sum by (%s) (rate(istio_requests_total{%s}[WINDOW])) * 0)" $lvl.by $sel $lvl.by $sel)
+      "totalExpr" (printf "sum by (%s) (rate(istio_requests_total{%s}[WINDOW])) > 0" $lvl.by $sel)
     ) | nindent 4 }}
 {{- end }}
 {{- if $.Values.slo.latency.enabled }}
@@ -56,6 +62,10 @@ spec:
   Prometheus will not interpolate, an unknown le simply matches nothing and the
   SLI silently reads 100% error. Istio's default boundaries include
   0.5, 1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000.
+
+  No `or` guard is needed on the error side here: both le buckets belong to the
+  same histogram, so the subtraction always yields an element — zero when
+  nothing was slow — rather than an empty vector.
 */ -}}
 {{- include "monitoring-config.sloth.ruleGroup" (dict
       "level" $lvl.level
@@ -65,7 +75,7 @@ spec:
       "period" $.Values.slo.period
       "alerts" $.Values.slo.alerts
       "errorExpr" (printf "sum by (%s) (rate(istio_request_duration_milliseconds_bucket{%s, le=\"+Inf\"}[WINDOW])) - sum by (%s) (rate(istio_request_duration_milliseconds_bucket{%s, le=\"%v\"}[WINDOW]))" $lvl.by $sel $lvl.by $sel $.Values.slo.latency.thresholdMs)
-      "totalExpr" (printf "sum by (%s) (rate(istio_request_duration_milliseconds_bucket{%s, le=\"+Inf\"}[WINDOW]))" $lvl.by $sel)
+      "totalExpr" (printf "sum by (%s) (rate(istio_request_duration_milliseconds_bucket{%s, le=\"+Inf\"}[WINDOW])) > 0" $lvl.by $sel)
     ) | nindent 4 }}
 {{- end }}
 {{- end }}
