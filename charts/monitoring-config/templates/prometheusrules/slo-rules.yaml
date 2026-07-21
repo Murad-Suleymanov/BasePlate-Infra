@@ -22,8 +22,16 @@
 
   A service is served by one data plane, so only one rendering exists per
   group-by — the sum cannot pick up the same bucket twice.
+
+  The rendered PromQL must read le=~"500(\\.0+)?" with TWO backslashes. A PromQL
+  string literal is unquoted with Go rules, where \. is not a valid escape
+  sequence and the whole expression is a parse error — not an empty result. A
+  parse error is worse than it sounds: Prometheus refuses to load the rule file
+  and silently keeps serving the previous version, so unrelated groups in this
+  same file appear to work while the change never took effect. Hence the
+  quadrupled backslash below: Go template -> \\ in the YAML -> \ for the regex.
 */ -}}
-{{- $le := printf "%v(\\.0+)?" .Values.slo.latency.thresholdMs -}}
+{{- $le := printf "%v(\\\\.0+)?" .Values.slo.latency.thresholdMs -}}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:

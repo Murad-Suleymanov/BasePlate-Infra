@@ -222,9 +222,33 @@ helm template test charts/monitoring-config \
   -s templates/prometheusrules/slo-rules.yaml
 ```
 
+> **Neither command validates PromQL.** `helm lint` checks templating and YAML;
+> both pass happily on an expression Prometheus will reject. This matters more
+> than it sounds: prometheus-operator writes one rule file per PrometheusRule,
+> and if *any* expression in it fails to parse, Prometheus refuses the whole
+> file and keeps serving the previous version. The symptom is not an error —
+> it is a change that appears to deploy and simply never takes effect, while
+> unrelated groups in the same file keep working from the stale copy.
+
+So validate the expressions before pushing. Against a live cluster the
+operator's admission webhook does it:
+
+```bash
+helm template test charts/monitoring-config \
+  -f prod/monitoring-config/values/monitoring-config-values.yaml \
+  -s templates/prometheusrules/slo-rules.yaml \
+  | kubectl apply --dry-run=server -f -
+```
+
+Offline, feed the rendered `spec` to `promtool check rules` from the
+`prom/prometheus` image. Watch especially for `unknown escape sequence` — a
+PromQL string literal is unquoted with Go rules, so a regex needs `\\.`, not
+`\.`, and the template has to emit the doubled backslash.
+
 Rendered rules land in the `monitoring` namespace and are picked up by
 kube-prometheus-stack's `ruleSelector`. Confirm in Prometheus under
-**Status → Rules**, group `sloth-slo-*`.
+**Status → Rules**, group `sloth-slo-*` — and check the group is actually
+listed there, not just that the PrometheusRule object exists.
 
 Recording rules need one evaluation interval before they return anything, and
 `slo:sli_error:ratio_rate30d` needs the 5m series to have existed for a while —

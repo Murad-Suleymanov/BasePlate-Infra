@@ -166,9 +166,17 @@ slo:
   # Consequence worth knowing: in ambient, a service with no waypoint produces no
   # HTTP metrics, so it gets no SLO. Give it a waypoint to bring it under SLO.
   #
-  # Add exclusions here to keep infra chatter out of app SLOs, e.g.:
+  # "unknown" is dropped because an SLO is a promise about a named service that
+  # some team owns. Istio labels traffic it cannot attribute to a workload as
+  # destination_canonical_service="unknown", which is a real signal but not an
+  # ownable one — nobody can defend its error budget, and its burn-rate alerts
+  # page a team that cannot act on them. It showed up as the loudest row on the
+  # dashboard precisely because unattributed traffic fails often. Mesh health,
+  # not SLO: look at it on the Istio Mesh dashboard instead.
+  #
+  # Add further exclusions here to keep infra chatter out of app SLOs, e.g.:
   #   selector: 'reporter=~"waypoint|destination", destination_workload_namespace!~"istio-system|monitoring"'
-  selector: 'reporter=~"waypoint|destination"'
+  selector: 'reporter=~"waypoint|destination", destination_canonical_service!="unknown", destination_workload_namespace!="unknown"'
 
   # Per-instance SLOs alongside the per-service ones. Costs one extra series set
   # per pod, and is what makes a bad instance inside a healthy pool visible —
