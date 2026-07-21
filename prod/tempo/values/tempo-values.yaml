@@ -1,7 +1,16 @@
 tempo:
+  # The chart defaults this to 1024. A ballast counts as live heap, so with GOGC=100
+  # the GC target starts at ~2Gi before a single span is ingested — raising the memory
+  # limit just moves the ceiling up with it and the pod still OOMKills. Ballast is the
+  # pre-Go-1.19 workaround; GOMEMLIMIT below is the supported replacement.
+  memBallastSizeMbs: 0
   extraArgs:
     config.expand-env: "true"
   extraEnv:
+    # Soft heap ceiling, ~500Mi under the 3Gi cgroup limit to leave room for stacks and
+    # off-heap. Keep this in step with resources.limits.memory if that changes.
+    - name: GOMEMLIMIT
+      value: "2560MiB"
     - name: TEMPO_S3_ACCESS_KEY
       valueFrom:
         secretKeyRef:
