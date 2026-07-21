@@ -66,17 +66,34 @@
         sloth_window: {{ $w | quote }}
 {{- end }}
     {{/*
-      Period (30d) SLI. Sloth avoids a 30d range over the raw counter — which
-      would force Prometheus to walk a month of samples on every evaluation —
-      by averaging the already-recorded 5m ratio across the period instead.
-      ignoring(sloth_window) drops the 5m label so the quotient is unlabelled
-      by window, then the rule stamps sloth_window={{ .period }} back on.
+      Period SLI, computed over the raw counters like every other window rather
+      than by averaging the recorded 5m ratio. This is a deliberate deviation
+      from Sloth, for two reasons.
+
+      Correctness: averaging 5m ratios weights every window equally, so five
+      minutes serving three requests counts as much as five minutes serving
+      thirty thousand. An error budget is a count of bad events against a count
+      of all events, and the ratio-of-sums below is that; the mean-of-ratios
+      above only coincides with it under constant traffic.
+
+      Recoverability: the mean-of-ratios reads a month of its own history, so a
+      single bad sample anywhere in the window poisons the output for the whole
+      period. That is not hypothetical — 0/0 on an idle window recorded NaN,
+      sum_over_time propagated it, and the error-budget panels stayed blank long
+      after the cause was fixed, because nothing an operator can deploy will
+      rewrite samples already in the TSDB. Reading the counters instead means a
+      fixed rule produces a correct value at the very next evaluation.
+
+      Cost is the trade Sloth is making, and it is real: this walks the period's
+      samples on every evaluation instead of {{ .period }} of pre-aggregated
+      ratio. At this fleet size that is nothing; at thousands of services,
+      revisit it — and note Prometheus only walks what retention actually holds.
     */}}
     - record: slo:sli_error:ratio_rate{{ .period }}
       expr: |-
-        sum_over_time(slo:sli_error:ratio_rate5m{sloth_slo="{{ .slo }}", sloth_level="{{ .level }}"}[{{ .period }}])
-        / ignoring (sloth_window)
-        count_over_time(slo:sli_error:ratio_rate5m{sloth_slo="{{ .slo }}", sloth_level="{{ .level }}"}[{{ .period }}])
+        ({{ .errorExpr | replace "WINDOW" .period }})
+        /
+        ({{ .totalExpr | replace "WINDOW" .period }})
       labels:
         sloth_slo: {{ .slo | quote }}
         sloth_level: {{ .level | quote }}
