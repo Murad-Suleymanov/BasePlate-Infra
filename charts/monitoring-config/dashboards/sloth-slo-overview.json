@@ -268,7 +268,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "description": "The promise, per SLO. Set by slo.availability.objective and slo.latency.objective in values.yaml.",
+      "description": "The promise, per SLO. Set by slo.availability.objective and slo.latency.objective in values.yaml. Does not follow the SLI window — it is a constant.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "fixed", "fixedColor": "blue" },
@@ -307,7 +307,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "description": "How many times faster than 'exactly on budget' this service is spending right now. 100% lasts exactly the period. 1440% burns the month in two days.",
+      "description": "How many times faster than 'exactly on budget' this service spent its budget over the selected SLI window. 100% lasts exactly the period; 600% is the ticket threshold and 1440% the paging one — the same arithmetic the burn-rate alerts use, so this panel shows what they see. Divided through max by (...) because the SLI carries sloth_window and the budget carries sloth_period: matched directly, the two label sets share nothing and the division yields no result at all.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -341,17 +341,17 @@
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "editorMode": "code",
-          "expr": "100 * slo:current_burn_rate:ratio{sloth_level=\"service\", sloth_slo=~\"$slo\", destination_workload_namespace=~\"$namespace\", destination_canonical_service=\"$service\"}",
+          "expr": "100 * (max by (destination_workload_namespace, destination_canonical_service, sloth_slo) (slo:sli_error:ratio_rate$window{sloth_level=\"service\", sloth_slo=~\"$slo\", destination_workload_namespace=~\"$namespace\", destination_canonical_service=\"$service\"}) / max by (destination_workload_namespace, destination_canonical_service, sloth_slo) (slo:error_budget:ratio{sloth_level=\"service\", sloth_slo=~\"$slo\", destination_workload_namespace=~\"$namespace\", destination_canonical_service=\"$service\"}))",
           "legendFormat": "{{sloth_slo}}",
           "refId": "A"
         }
       ],
-      "title": "Current burn rate",
+      "title": "Burn rate over $window",
       "type": "stat"
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "description": "Share of the period's budget still unspent. Below zero means the SLO is already breached for this period — no amount of good traffic buys it back before the window rolls.",
+      "description": "Share of the period's budget still unspent. Below zero means the SLO is already breached for this period — no amount of good traffic buys it back before the window rolls. Scoped to the SLO period, not the SLI window: a budget is granted per period, so changing which window you are looking through does not change how much of it is left. Deliberately unclamped — an obviously absurd negative number is more useful than a floor at -100% that hides how far past the promise the service is.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -515,12 +515,12 @@
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "editorMode": "code",
-          "expr": "slo:current_burn_rate:ratio{sloth_level=\"instance\", sloth_slo=~\"$slo\", destination_workload_namespace=~\"$namespace\", destination_canonical_service=~\"$service\", destination_workload=~\"$instance\"}",
+          "expr": "max by (destination_workload_namespace, destination_canonical_service, destination_workload, sloth_slo) (slo:sli_error:ratio_rate$window{sloth_level=\"instance\", sloth_slo=~\"$slo\", destination_workload_namespace=~\"$namespace\", destination_canonical_service=~\"$service\", destination_workload=~\"$instance\"}) / max by (destination_workload_namespace, destination_canonical_service, destination_workload, sloth_slo) (slo:error_budget:ratio{sloth_level=\"instance\", sloth_slo=~\"$slo\", destination_workload_namespace=~\"$namespace\", destination_canonical_service=~\"$service\", destination_workload=~\"$instance\"})",
           "legendFormat": "{{destination_workload}} · {{sloth_slo}}",
           "refId": "A"
         }
       ],
-      "title": "Burn rate per instance",
+      "title": "Burn rate per instance over $window",
       "type": "timeseries"
     },
     {
