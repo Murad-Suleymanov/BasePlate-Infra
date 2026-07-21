@@ -76,10 +76,29 @@ the owning team cannot defend.
 the histogram as (all requests − requests within the bucket).
 
 > `thresholdMs` **must** be an existing `le` bucket boundary of
-> `istio_request_duration_milliseconds`. Prometheus does not interpolate: an
-> unknown `le` matches nothing and the SLI silently reads as 100% error.
-> Istio's default boundaries include `0.5, 1, 5, 10, 25, 50, 100, 250, 500,
-> 1000, 2500, 5000, 10000`.
+> `istio_request_duration_milliseconds` — Prometheus does not interpolate.
+> Istio's boundaries are `0.5, 1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500,
+> 5000, 10000` and up.
+
+An unmatched boundary does **not** read as 100% error, which is what makes it
+hard to spot. The SLI subtracts two vectors, and a binary operator between
+instant vectors is an inner join — an empty right side collapses the whole
+expression, so the rule records nothing, no group appears under
+`sloth_slo="latency"`, and every latency panel reads *No data* while the
+availability half of the same dashboard keeps working normally.
+
+`le` is a string label, and the two data planes spell the same boundary
+differently: a sidecar reports `le="500"`, a waypoint reports `le="500.0"`. The
+rule therefore matches `le=~"500(\.0+)?"`, built from `thresholdMs`, so the
+value stays a plain number in `values.yaml` and works under either data plane.
+
+Before changing `thresholdMs`, check what actually exists:
+
+```promql
+count by (le) (istio_request_duration_milliseconds_bucket)
+```
+
+and read the values literally — `500` and `500.0` are different label values.
 
 ### Why `reporter=~"waypoint|destination"`
 

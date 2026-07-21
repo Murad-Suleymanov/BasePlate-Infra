@@ -14,6 +14,16 @@
 {{- $sel := .Values.slo.selector -}}
 {{- $svcBy := "destination_workload_namespace, destination_canonical_service" -}}
 {{- $instBy := "destination_workload_namespace, destination_canonical_service, destination_workload" -}}
+{{- /*
+  le is a string label, and the two data planes render the same boundary
+  differently: a sidecar reports le="500", a waypoint reports le="500.0". An
+  equality matcher therefore silently picks one and misses the other. Match both
+  renderings instead, so thresholdMs stays a plain number in values.yaml.
+
+  A service is served by one data plane, so only one rendering exists per
+  group-by — the sum cannot pick up the same bucket twice.
+*/ -}}
+{{- $le := printf "%v(\\.0+)?" .Values.slo.latency.thresholdMs -}}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -59,13 +69,22 @@ spec:
   Latency SLI: the share of requests slower than the threshold, read off the
   histogram as (all requests - requests within the bucket). thresholdMs must be
   an existing le bucket boundary of istio_request_duration_milliseconds —
-  Prometheus will not interpolate, an unknown le simply matches nothing and the
-  SLI silently reads 100% error. Istio's default boundaries include
-  0.5, 1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000.
+  Prometheus does not interpolate. Istio's boundaries are
+  0.5, 1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000 and up.
 
-  No `or` guard is needed on the error side here: both le buckets belong to the
-  same histogram, so the subtraction always yields an element — zero when
-  nothing was slow — rather than an empty vector.
+  An unmatched boundary does NOT read as 100% error, which is what makes it so
+  easy to misdiagnose: the subtraction is an inner join, so an empty right side
+  collapses the whole expression to an empty vector. The rule then records
+  nothing at all, no group appears under sloth_slo="latency", and every latency
+  panel reads "No data" while the availability half of the same dashboard keeps
+  working. Confirm a boundary exists with
+  `count by (le) (istio_request_duration_milliseconds_bucket)` before changing
+  thresholdMs — and read the value literally, since $le above exists precisely
+  because the two data planes spell the same boundary differently.
+
+  No `or` guard is needed on the error side: both le matchers hit the same
+  histogram, so once the boundary matches, the subtraction always yields an
+  element — zero when nothing was slow — rather than an empty vector.
 */ -}}
 {{- include "monitoring-config.sloth.ruleGroup" (dict
       "level" $lvl.level
@@ -74,7 +93,7 @@ spec:
       "objective" $.Values.slo.latency.objective
       "period" $.Values.slo.period
       "alerts" $.Values.slo.alerts
-      "errorExpr" (printf "sum by (%s) (rate(istio_request_duration_milliseconds_bucket{%s, le=\"+Inf\"}[WINDOW])) - sum by (%s) (rate(istio_request_duration_milliseconds_bucket{%s, le=\"%v\"}[WINDOW]))" $lvl.by $sel $lvl.by $sel $.Values.slo.latency.thresholdMs)
+      "errorExpr" (printf "sum by (%s) (rate(istio_request_duration_milliseconds_bucket{%s, le=\"+Inf\"}[WINDOW])) - sum by (%s) (rate(istio_request_duration_milliseconds_bucket{%s, le=~\"%s\"}[WINDOW]))" $lvl.by $sel $lvl.by $sel $le)
       "totalExpr" (printf "sum by (%s) (rate(istio_request_duration_milliseconds_bucket{%s, le=\"+Inf\"}[WINDOW])) > 0" $lvl.by $sel)
     ) | nindent 4 }}
 {{- end }}
