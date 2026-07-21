@@ -81,12 +81,30 @@ the histogram as (all requests − requests within the bucket).
 > Istio's default boundaries include `0.5, 1, 5, 10, 25, 50, 100, 250, 500,
 > 1000, 2500, 5000, 10000`.
 
-### Why `reporter="destination"`
+### Why `reporter=~"waypoint|destination"`
 
 Between two meshed pods the request is reported twice — once by the caller's
 proxy, once by the callee's. Without this selector every ratio is computed over
-inflated totals. Under ambient mesh ztunnel reports as the destination, so it
-holds there too.
+inflated totals.
+
+Which reporter counts the request once depends on the data plane:
+
+| Data plane | Emits `istio_requests_total`? | `reporter` |
+| --- | --- | --- |
+| Waypoint proxy (ambient, L7) | yes | `waypoint` |
+| ztunnel (ambient, L4) | **no** — `istio_tcp_*` only | — |
+| Sidecar | yes | `destination` |
+
+A waypoint-fronted request is never *also* reported as `destination`, so matching
+both values keeps the count at once per request while covering either shape.
+
+> **Ambient services with no waypoint get no SLO.** ztunnel does not produce HTTP
+> metrics, so there is nothing to build an availability or latency SLI from.
+> Attaching a waypoint is what brings a service under SLO.
+
+Filtering on `reporter="destination"` alone — the natural choice on a sidecar
+mesh — silently yields an empty dashboard here: no series, and the Namespace /
+Service / Instance variables come up with no values at all.
 
 ---
 

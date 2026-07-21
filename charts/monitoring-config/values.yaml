@@ -80,6 +80,12 @@ serviceMonitors:
     enabled: true
   jaeger:
     enabled: true
+  # Ambient data plane. The waypoint PodMonitor is what feeds the SLO rules —
+  # istio_requests_total exists only where a waypoint is scraped.
+  ztunnel:
+    enabled: true
+  waypoint:
+    enabled: true
 
 # extraServiceMonitors:
 #   - name: my-app
@@ -143,15 +149,26 @@ slo:
   # rather than ranged over the raw counter, so a long period stays cheap.
   period: 30d
 
-  # Label selector applied to every SLI query. reporter="destination" counts each
-  # request once, at the receiving proxy — without it, requests between two
-  # meshed pods are reported twice (once by the caller, once by the callee) and
-  # every ratio is computed over inflated totals. Under ambient mesh, ztunnel
-  # reports as the destination, so this holds there too.
+  # Label selector applied to every SLI query. The point is to count each request
+  # exactly once — without it, a request between two meshed pods is reported twice
+  # (once by the caller, once by the callee) and every ratio is computed over
+  # inflated totals.
+  #
+  # Which reporter does that depends on the data plane, and this mesh runs both
+  # shapes, so both values are accepted:
+  #   waypoint    — ambient. HTTP metrics come ONLY from waypoint proxies; ztunnel
+  #                 emits TCP metrics (istio_tcp_*) and no istio_requests_total at
+  #                 all. A waypoint-fronted request is reported once, by the
+  #                 waypoint, and never also as reporter="destination".
+  #   destination — sidecar workloads, reported at the receiving proxy.
+  # The two never both fire for the same request, so the union stays once-per-request.
+  #
+  # Consequence worth knowing: in ambient, a service with no waypoint produces no
+  # HTTP metrics, so it gets no SLO. Give it a waypoint to bring it under SLO.
   #
   # Add exclusions here to keep infra chatter out of app SLOs, e.g.:
-  #   selector: 'reporter="destination", destination_workload_namespace!~"istio-system|monitoring"'
-  selector: 'reporter="destination"'
+  #   selector: 'reporter=~"waypoint|destination", destination_workload_namespace!~"istio-system|monitoring"'
+  selector: 'reporter=~"waypoint|destination"'
 
   # Per-instance SLOs alongside the per-service ones. Costs one extra series set
   # per pod, and is what makes a bad instance inside a healthy pool visible —
