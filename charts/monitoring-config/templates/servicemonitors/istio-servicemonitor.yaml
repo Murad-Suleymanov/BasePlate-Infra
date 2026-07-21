@@ -99,6 +99,36 @@ spec:
       interval: {{ .Values.scrapeInterval }}
 {{- end }}
 ---
+{{- if .Values.serviceMonitors.istioGateway.enabled }}
+{{- /*
+  The ingress gateways provisioned from a Gateway with gatewayClassName: istio.
+  Easy to miss: waypoints and ingress gateways carry the SAME label key and are
+  told apart only by its value — istio.io-mesh-controller for waypoints,
+  istio.io-gateway-controller for gateways — so a waypoint PodMonitor looks like
+  it covers "the Istio proxies" while silently leaving the front door unscraped.
+  These pods report as reporter="source", which the SLO rules deliberately skip
+  to avoid double counting, but they are the only view of what the gateway saw
+  before it picked a backend.
+*/}}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: istio-gateway
+  namespace: istio-system
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      gateway.istio.io/managed: istio.io-gateway-controller
+  namespaceSelector:
+    any: true
+  podMetricsEndpoints:
+    - port: http-envoy-prom
+      path: /stats/prometheus
+      interval: {{ .Values.scrapeInterval }}
+{{- end }}
+---
 {{- if .Values.serviceMonitors.waypoint.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor

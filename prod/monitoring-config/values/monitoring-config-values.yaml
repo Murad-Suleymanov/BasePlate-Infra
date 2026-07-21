@@ -66,5 +66,7 @@ serviceMonitors:
     enabled: true
   waypoint:
     enabled: true
+  istioGateway:
+    enabled: true
 
 extraServiceMonitors: []

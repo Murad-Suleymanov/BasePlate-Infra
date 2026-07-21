@@ -1,6 +1,13 @@
 pilot:
   env:
     PILOT_ENABLE_AMBIENT: "true"
+    # Let traffic that entered through main-gateway reach the destination's
+    # waypoint. Istio exempts ingress from the waypoint by default, so without
+    # this the gateway's Envoy talks straight to the pod: no L7 policy on the
+    # destination side and no reporter="waypoint" telemetry, which is what the
+    # SLO rules read. Paired with istio.io/ingress-use-waypoint on the Service,
+    # set by the operator — neither half works alone.
+    ENABLE_INGRESS_WAYPOINT_ROUTING: "true"
   resources:
     requests:
       cpu: 200m

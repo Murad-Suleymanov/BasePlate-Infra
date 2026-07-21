@@ -86,6 +86,10 @@ serviceMonitors:
     enabled: true
   waypoint:
     enabled: true
+  # The ingress gateways (gatewayClassName: istio). Separate from waypoint above
+  # because the two are distinguished only by the VALUE of one shared label.
+  istioGateway:
+    enabled: true
 
 # extraServiceMonitors:
 #   - name: my-app
